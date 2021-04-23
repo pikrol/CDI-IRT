@@ -1,1 +1,1 @@
-# Communicative Development Inventories - IRT analyses and CAT simulations
+# Communicative Development Inventories - IRT analysis and CAT simulations
