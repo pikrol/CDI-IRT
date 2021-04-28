@@ -1,3 +1,4 @@
+"Category"	"Number of not fitting items"
 "Z16.czasowniki"	8
 "Z04.pokarmy"	3
 "Z09.przedmioty_domowego_u¿ytku"	3

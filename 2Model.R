@@ -111,7 +111,7 @@ notFittingItems$Difficulty <- params[is.element(params$Numer, notFittingItems$Nu
 write.csv(notFittingItems, file = "Results/notFittingItems.csv", fileEncoding = "utf-8", row.names = F)
 
 notFittingCategories <- sort(table(notFittingItems$Kategoria), decreasing = TRUE)
-write.table(notFittingCategories, file = "Results/notFittingCategories.txt", sep = "\t", col.names = FALSE, row.names = FALSE)
+write.table(notFittingCategories, file = "Results/notFittingCategories.txt", sep = "\t", col.names = c("Category", "Number of not fitting items"), row.names = FALSE)
 
 #Check not fitting items params
 # notFittingItems$DscrmnNormal <- ifelse(notFittingItems$Discrimination > mean(params$a1) - sd(params$a1) & notFittingItems$Discrimination < mean(params$a1) + sd(params$a1), 1, 0)
