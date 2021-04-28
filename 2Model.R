@@ -30,8 +30,18 @@ fullThetas <- data.frame(KOD = responsesDemo$KOD, fullTheta = fullThetas)
 colnames(fullThetas) <- c("KOD", "fullTheta")
 # write.csv(fullThetas, file = "Data/fullThetas.csv", fileEncoding = "utf-8", row.names = F)
 
+#Save full thetas vs. points plot
 png("Plots/pointsVsTheta.png", width = 853, pointsize = 16)
 plot(data.frame(Score = rowSums(responses), Theta = fullThetas), xlab = "Points", ylab = "Theta", main = "Relation between theta and points")
+dev.off()
+
+#Check full thetas in particular age groups
+responsesDemo <- read.csv("Data/responsesDemo.csv", encoding = "UTF-8")
+fullThetasAge <- data.frame(age = responsesDemo$WiekMiesiące, fullTheta = fullThetas)
+
+age = 30
+png(paste0("Plots/thetasInAgeGroups/", age, ".png"), width = 853, pointsize = 16)
+hist(fullThetasAge[fullThetasAge$age == age, "F1"], xlab = "Theta", main = paste0("Age - ", age, " months"))
 dev.off()
 
 #---------
@@ -45,7 +55,7 @@ dev.off()
 # write.csv(itemsFit, file = "Data/itemsFit.csv", fileEncoding = "utf-8", row.names = F)
 
 #Load saved items fit
-# itemsFit <- read.csv("Data/itemsFit.csv", encoding = "UTF-8")
+itemsFit <- read.csv("Data/itemsFit.csv", encoding = "UTF-8")
 
 #Check number of not fitting items (p < 0.05) - 35
 # nrow(itemsFit[itemsFit$p.S_X2 < 0.05, ])
@@ -63,6 +73,10 @@ dev.off()
 #Load saved vector with not fitting items numbers
 load("Data/notFitting")
 notFittingItems <- cdi[is.element(cdi$Numer, notFitting), ]
+
+#Order by RMSEA
+# itemsFitRestricted <- itemsFit[is.element(itemsFit$item, notFitting), ]
+# itemsFitRestricted <- itemsFitRestricted[order(itemsFitRestricted$RMSEA.S_X2), ]
 
 #----------------
 #ITEMS PARAMETERS
