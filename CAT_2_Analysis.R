@@ -11,6 +11,12 @@ if(!dir.exists(file.path(paste0(getwd(), "Plots/", folder0, "/"), folder))) dir.
 #Set mirtCAT results variable
 results <- results1
 
+#Prepare frequency data frame
+frequencyDf <- data.frame(itemNr = 1 : nrow(params))
+itemsAnswered <- laply(results, function(x) x$items_answered)
+itemsAnsweredFreq <- as.data.frame(table(as.vector(itemsAnswered)))
+colnames(itemsAnsweredFreq) <- c("itemNr", "freq")
+
 #--------------------------------------------
 #CORRELATION BETWEEN ESTIMATED AND TRUE THETA
 #--------------------------------------------
@@ -31,15 +37,10 @@ plotSave(plot, filename = paste0(resultsFolder, "cor - ", itemsNr, " items", ".p
 #DISTRIBUTION OF USAGE OF ITEMS
 #------------------------------
 
-#Prepare frequency data frame
-frequencyDf <- data.frame(ItemNr = 1 : nrow(params))
-itemsAnswered <- laply(results, function(x) x$items_answered)
-itemsAnsweredFreq <- as.data.frame(table(as.vector(itemsAnswered)))
-colnames(itemsAnsweredFreq) <- c("ItemNr", "Freq")
-frequencyDf <- merge(frequencyDf, itemsAnsweredFreq, by = "ItemNr", all.x = TRUE)
+frequencyDf <- merge(frequencyDf, itemsAnsweredFreq, by = "itemNr", all.x = TRUE)
 frequencyDf[is.na(frequencyDf)] <- 0
-frequencyDf$Freq <- (frequencyDf$Freq / length(results))
-cuts <- cut(frequencyDf$Freq, breaks = c(0, 0.1, 0.2, 0.3, 0.4, 1), labels = c("(0 - 10%]", "(10 - 20%]", "(20 - 30%]", "(30 - 40%]", "over 40%"), dig.lab = 0)
+frequencyDf$freq <- (frequencyDf$freq / length(results))
+cuts <- cut(frequencyDf$freq, breaks = c(0, 0.1, 0.2, 0.3, 0.4, 1), labels = c("(0 - 10%]", "(10 - 20%]", "(20 - 30%]", "(30 - 40%]", "over 40%"), dig.lab = 0)
 frequencyDf$cut <- cuts
 frequencyDf = frequencyDf %>% mutate_if(is.factor,
                                         fct_explicit_na,
@@ -75,3 +76,34 @@ plot <- ggscatter(data.frame(estTheta = thetas, SE = SEthetas), y = "SE", x = "e
                   xlab = "Theta", ylab = "SE", title = title)
 print(plot)
 plotSave(plot, filename = paste0(resultsFolder, "SE - ", itemsNr, " items", ".png"))
+
+#-----------------------
+#NOT FITTING ITEMS USED?
+#-----------------------
+
+#Prepare frequency data frame
+itemsAnsweredFreq$freq <- round(itemsAnsweredFreq$freq/length(results), 2)
+
+#Add column whether item is not fitting or not
+itemsAnsweredFreq$notFitting <- laply(itemsAnsweredFreq$itemNr, function(x){
+  if (is.element(x, notFitting)){
+    return(1)
+  } else {
+    return(0)
+  }
+})
+itemsAnsweredFreq <- itemsAnsweredFreq[order(itemsAnsweredFreq$notFitting, decreasing = TRUE), ]
+
+#Add position column
+cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
+itemsAnsweredFreq$position <- cdi[itemsAnsweredFreq$itemNr, "Pozycja"]
+
+#Save to file
+write.csv(itemsAnsweredFreq, file = "Results/notFittingItemsUsage.csv", fileEncoding = "utf-8", row.names = F)
+write.table(table(itemsAnsweredFreq$notFitting), file = "Results/notFittingItemsNumbers.txt", sep = "\t", col.names = FALSE, row.names = FALSE)
+
+#----------------
+#WHAT ITEMS USED?
+#----------------
+
+itemsAnsweredFreq <- itemsAnsweredFreq[order(itemsAnsweredFreq$freq, decreasing = TRUE), ]

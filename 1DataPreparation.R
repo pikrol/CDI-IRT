@@ -18,6 +18,7 @@ cdi <- data[, c("Kategoria", "Numer", "NumerSiG", "Pozycja")]
 cdi <- unique(cdi)
 cdi <- cdi[order(cdi$Numer),]
 cdi$Numer <- as.character(cdi$Numer)
+write.csv(cdi, file = "Data/cdi.csv", fileEncoding = "utf-8", row.names = F)
 
 #Remove wg version
 data <- data[data$Wersja=="Z",]

@@ -19,6 +19,7 @@ params <- params[!is.element(params$Numer, notFitting), ]
 responsesDemo <- responsesDemo[, -which(names(responsesDemo) %in% paste0("item", notFitting))]
 folder0 <- "RestrictedP05"
 
+#Prepare params df
 params <- data.frame(a1 = params$a1, d = params$d)
 
 #Generate mirt object from item parameters
@@ -79,18 +80,18 @@ startThetas <- as.matrix(startThetas)
 #------------
 
 # 2. Fixed number of items
-itemsNr <- 10
+itemsNr <- 50
 
 # 2.1. No start theta given
-# titleSufix <- "no start theta given"
-# folder <- "No start theta"
-# design <- list(min_items = itemsNr, max_items = itemsNr)
-# results1 <- mirtCAT(mo = mirtObject, method = 'ML', criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = design)
+titleSufix <- "no start theta given"
+folder <- "No start theta"
+design <- list(min_items = itemsNr, max_items = itemsNr)
+results1 <- mirtCAT(mo = mirtObject, method = 'ML', criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = design)
 
 # 2.2. Initial thetas estimates given
-titleSufix <- paste0("start theta given by gender and age in ", tolower(xlab))
-folder <- paste0("Start theta by ", tolower(xlab))
-design <- list(min_items = itemsNr, max_items = itemsNr, thetas.start = startThetas)
-results1 <- mirtCAT(mo = mirtObject, method = 'ML', criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = design)
+# titleSufix <- paste0("start theta given by gender and age in ", tolower(xlab))
+# folder <- paste0("Start theta by ", tolower(xlab))
+# design <- list(min_items = itemsNr, max_items = itemsNr, thetas.start = startThetas)
+# results1 <- mirtCAT(mo = mirtObject, method = 'ML', criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = design)
 
 beep(sound=8)
