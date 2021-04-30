@@ -80,7 +80,7 @@ startThetas <- as.matrix(startThetas)
 #------------
 
 # 2. Fixed number of items
-itemsNr <- 50
+itemsNr <- 15
 
 # 2.1. No start theta given
 titleSufix <- "no start theta given"
