@@ -1,4 +1,15 @@
 library(mirt)
+library(ggpubr) #For making plots
+options(max.print=999999)
+
+#If not done after 1DataPreparation load ready csv:
+responsesDemo <- read.csv("Data/responsesDemo.csv", encoding = "UTF-8") 
+responses <- as.matrix(responsesDemo[,5:ncol(responsesDemo)])
+cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
+
+#To save any plot
+# png("Plots/...", width = 853, pointsize = 16)
+# dev.off()
 
 #--------------
 #MODEL CREATION 
@@ -6,43 +17,70 @@ library(mirt)
 
 #Create mirt model (it takes some time)
 # library(beepr)
-# model <- mirt(answers, 1)
+# model <- mirt(responses, 1)
 # beep(sound=8)
 # save(model, file = "Data/model")
 
 #Load saved model
 load("Data/model")
 
+#Plot expected total score
+plot(model)
+
+#----------------
+#ITEMS PARAMETERS
+#----------------
+
+#Get items params
+params <- as.data.frame(coef(model, IRTpars = TRUE, simplify = TRUE)$items)
+params$g <- NULL
+params$u <- NULL
+
+#Plot difficulty vs. number of selections (to check if params makes sense)
+# plot(params$b, colSums(responses), xlab = "Item difficulty", ylab = "Number of selections")
+
+#Prepare params df with positions and categories
+params$position <- cdi$Pozycja
+params$category <- cdi$Kategoria
+params$number.ws <- cdi$Numer
+write.csv(params, file = "Data/params.csv", fileEncoding = "utf-8", row.names = F)
+
+#Plot items params
+#plot(params$b, params$a, xlab = "Difficulty", ylab = "Discrimination", main = "Items parameters")
+ggplot(params, aes(b, a, label = position, colour = category)) +
+  geom_text(check_overlap = TRUE) +
+  xlab("Difficulty") +
+  ylab("Discrimination") + 
+  labs(colour = "Category", title = "Items parameters")
+
 #-----------
 #FULL THETAS
 #-----------
 
 #Obtain full thetas
-fullThetas <- fscores(model)
-
-#Save full thetas histogram
-png("Plots/fullThetas.png", width = 853, pointsize = 16)
-hist(fullThetas, xlab = "Theta", main = "Histogram of full thetas")
-dev.off()
+# fullThetas <- fscores(model)
 
 #Save full thetas to file
-fullThetas <- data.frame(KOD = responsesDemo$KOD, fullTheta = fullThetas)
-colnames(fullThetas) <- c("KOD", "fullTheta")
+# fullThetas <- data.frame(KOD = responsesDemo$KOD, fullTheta = fullThetas)
+# colnames(fullThetas) <- c("KOD", "fullTheta")
 # write.csv(fullThetas, file = "Data/fullThetas.csv", fileEncoding = "utf-8", row.names = F)
 
-#Save full thetas vs. points plot
-png("Plots/pointsVsTheta.png", width = 853, pointsize = 16)
-plot(data.frame(Score = rowSums(responses), Theta = fullThetas), xlab = "Points", ylab = "Theta", main = "Relation between theta and points")
-dev.off()
+#Read already prepared full thetas
+fullThetas <- read.csv("Data/fullThetas.csv", encoding = "UTF-8")
 
-#Check full thetas in particular age groups
-responsesDemo <- read.csv("Data/responsesDemo.csv", encoding = "UTF-8")
-fullThetasAge <- data.frame(age = responsesDemo$WiekMiesiące, fullTheta = fullThetas)
+#Save full thetas histogram
+hist(fullThetas$fullTheta, xlab = "Theta", main = "Histogram of full thetas")
 
-age = 30
-png(paste0("Plots/thetasInAgeGroups/", age, ".png"), width = 853, pointsize = 16)
-hist(fullThetasAge[fullThetasAge$age == age, "F1"], xlab = "Theta", main = paste0("Age - ", age, " months"))
-dev.off()
+#Plot full thetas distribution in age groups
+fullThetasAge <- data.frame(age = responsesDemo$WiekMiesiące, fullTheta = fullThetas$fullTheta)
+gghistogram(fullThetasAge, x = "fullTheta", bins = 10) + 
+  facet_wrap(~age) + 
+  labs(title = "Full thetas distribution in particular age groups") + 
+  xlab("Full theta") + 
+  ylab("Count")
+
+#Plot total score vs. theta
+# plot(data.frame(Theta = fullThetas$fullTheta, Score = rowSums(responses)), xlab = "Theta", ylab = "Total score", main = "Relation between theta and total score")
 
 #---------
 #ITEMS FIT 
@@ -72,50 +110,26 @@ itemsFit <- read.csv("Data/itemsFit.csv", encoding = "UTF-8")
 
 #Load saved vector with not fitting items numbers
 load("Data/notFitting")
+
+#Prepare df with not fitting items
 notFittingItems <- cdi[is.element(cdi$Numer, notFitting), ]
 
 #Order by RMSEA
 # itemsFitRestricted <- itemsFit[is.element(itemsFit$item, notFitting), ]
 # itemsFitRestricted <- itemsFitRestricted[order(itemsFitRestricted$RMSEA.S_X2), ]
 
-#----------------
-#ITEMS PARAMETERS
-#----------------
-
-#Obtain items parameters from model
-# l <- coef(model)
-# l$GroupPars <- NULL
-# params <- data.frame(matrix(unlist(l), nrow=670, byrow=T))[1:2]
-# colnames(params) <- c("a1", "d")
-# params$Numer <- names(l)
-# params <- merge(cdi, params, by = "Numer")
-# params <- params[,c("Numer", "NumerSiG", "Pozycja", "a1", "d", "Kategoria")]
-# params <- params[order(as.integer(params$Numer)), ]
-# rownames(params) <- NULL
-# write.csv(params, file = "Data/params.csv", fileEncoding = "utf-8", row.names = F)
-
-#Save items params plot
-# png("Plots/params.png", width = 853, pointsize = 16)
-# plot(params$d, params$a1, xlab = "Difficulty", ylab = "Discrimination", main = "Items parameters")
-# dev.off()
-
-params <- read.csv("Data/params.csv", encoding = "UTF-8")
-
 #-----------------
 #NOT FITTING ITEMS
 #-----------------
 
 #Prepare df with not fitting items and their params
-notFittingItems$Discrimination <- params[is.element(params$Numer, notFittingItems$Numer), "a1"]
-notFittingItems$Difficulty <- params[is.element(params$Numer, notFittingItems$Numer), "d"]
+# notFittingItems$Discrimination <- params[is.element(params$number.ws, notFittingItems$Numer), "a"]
+# notFittingItems$Difficulty <- params[is.element(params$number.ws, notFittingItems$Numer), "b"]
+# notFittingItems$DscrmnNormal <- ifelse(notFittingItems$Discrimination > mean(params$a) - sd(params$a) & notFittingItems$Discrimination < mean(params$a) + sd(params$a), 1, 0)
+# notFittingItems$DiffNormal <- ifelse(notFittingItems$Difficulty > mean(params$b) - sd(params$b) & notFittingItems$Difficulty < mean(params$b) + sd(params$b), 1, 0)
 write.csv(notFittingItems, file = "Results/notFittingItems.csv", fileEncoding = "utf-8", row.names = F)
 
-notFittingCategories <- sort(table(notFittingItems$Kategoria), decreasing = TRUE)
-write.table(notFittingCategories, file = "Results/notFittingCategories.txt", sep = "\t", col.names = c("Category", "Number of not fitting items"), row.names = FALSE)
-
-#Check not fitting items params
-# notFittingItems$DscrmnNormal <- ifelse(notFittingItems$Discrimination > mean(params$a1) - sd(params$a1) & notFittingItems$Discrimination < mean(params$a1) + sd(params$a1), 1, 0)
-# 
-# notFittingItems$DiffNormal <- ifelse(notFittingItems$Difficulty > mean(params$d) - sd(params$d) & notFittingItems$Difficulty < mean(params$d) + sd(params$d), 1, 0)
-# 
-# table(notFittingItems$DscrmnNormal)
+#Check not fitting categories
+# notFittingCategories <- sort(table(notFittingItems$Kategoria), decreasing = TRUE)
+notFittingCategories <- sort(table(notFittingItems$Kategoria) / table(cdi$Kategoria), decreasing = TRUE)
+write.table(notFittingCategories, file = "Results/notFittingCategoriesPercents.txt", sep = "\t", col.names = c("Category", "Percent of not fitting items"), row.names = FALSE)

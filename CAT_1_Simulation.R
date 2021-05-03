@@ -19,19 +19,17 @@ params <- params[!is.element(params$Numer, notFitting), ]
 responsesDemo <- responsesDemo[, -which(names(responsesDemo) %in% paste0("item", notFitting))]
 folder0 <- "RestrictedP05"
 
-#Prepare params df
-params <- data.frame(a1 = params$a1, d = params$d)
+#Prepare params df (convert difficulty from classic IRT to mirt format)
+paramsToMirt <- data.frame(a1 = params$a, d = params$b * params$a * (-1))
 
 #Generate mirt object from item parameters
-mirtObject <- generate.mirt_object(params, '2PL') 
+mirtObject <- generate.mirt_object(paramsToMirt, '2PL') 
 
 #For computation in parallel (speeds up any simulation)
 cl <- makeCluster(detectCores())
 
 #Get pure responses matrix
-responses <- responsesDemo
-responses <- responses[,5:ncol(responses)]
-responses <- as.matrix(responses)
+responses <- as.matrix(responsesDemo[,5:ncol(responsesDemo)])
 
 #Prepare full thetas
 fullThetas <- read.csv("Data/fullThetas.csv", encoding = "UTF-8")
@@ -44,7 +42,7 @@ fullThetasDemo$WiekTygodnie <- ceiling(fullThetasDemo$WiekDni/7)
 fullThetasAggr <- aggregate(fullTheta ~ WiekDni + Płeć , data = fullThetasDemo, mean)
 dateUnit <- colnames(fullThetasAggr)[1]
 
-#Plot full theta vs. date unit
+#Prepare 'xlab' variable
 if (dateUnit == "WiekDni"){
   xlab <- "Days"
 } else if (dateUnit == "WiekTygodnie"){
@@ -52,6 +50,8 @@ if (dateUnit == "WiekDni"){
 } else if (dateUnit == "WiekMiesiące"){
   xlab <- "Months"
 }
+
+#Plot full theta vs. date unit
 # title <- paste0("Relation between full theta and age in ", tolower(xlab))
 # plot <- ggscatter(fullThetasAggr, y = "fullTheta", x = dateUnit,
 #           add = "reg.line", conf.int = TRUE,
@@ -80,7 +80,7 @@ startThetas <- as.matrix(startThetas)
 #------------
 
 # 2. Fixed number of items
-itemsNr <- 15
+itemsNr <- 5
 
 # 2.1. No start theta given
 titleSufix <- "no start theta given"
@@ -91,7 +91,7 @@ results1 <- mirtCAT(mo = mirtObject, method = 'ML', criteria = "MI", start_item 
 # 2.2. Initial thetas estimates given
 # titleSufix <- paste0("start theta given by gender and age in ", tolower(xlab))
 # folder <- paste0("Start theta by ", tolower(xlab))
-# design <- list(min_items = itemsNr, max_items = itemsNr, thetas.start = startThetas)
+# design <- list(min_items = itemsNr, max_items = itemsNr, thetas.start = as.vector(4))
 # results1 <- mirtCAT(mo = mirtObject, method = 'ML', criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = design)
 
 beep(sound=8)

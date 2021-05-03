@@ -16,11 +16,11 @@ thetas <- laply(results, function(x) x$thetas)
 SEthetas <- laply(results, function(x) x$SE_thetas)
 
 #Update meanSEs df
-if (!exists("meanSEs")){
-  meanSEs <- data.frame(items = itemsNr, meanSE = mean(SEthetas))
-} else {
-  meanSEs <- rbind(meanSEs, c(itemsNr, mean(SEthetas)))
-}
+# if (!exists("meanSEs")){
+#   meanSEs <- data.frame(items = itemsNr, meanSE = mean(SEthetas))
+# } else {
+#   meanSEs <- rbind(meanSEs, c(itemsNr, mean(SEthetas)))
+# }
 
 #Get items used and their frequency
 itemsAnswered <- laply(results, function(x) x$items_answered)
