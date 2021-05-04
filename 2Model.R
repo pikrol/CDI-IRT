@@ -1,6 +1,10 @@
+library(rstudioapi)
 library(mirt)
 library(ggpubr) #For making plots
 options(max.print=999999)
+
+#Set proper current working directory
+setwd(dirname(getActiveDocumentContext()$path))
 
 #If not done after 1DataPreparation load ready csv:
 responsesDemo <- read.csv("Data/responsesDemo.csv", encoding = "UTF-8") 
@@ -127,9 +131,9 @@ notFittingItems <- cdi[is.element(cdi$Numer, notFitting), ]
 # notFittingItems$Difficulty <- params[is.element(params$number.ws, notFittingItems$Numer), "b"]
 # notFittingItems$DscrmnNormal <- ifelse(notFittingItems$Discrimination > mean(params$a) - sd(params$a) & notFittingItems$Discrimination < mean(params$a) + sd(params$a), 1, 0)
 # notFittingItems$DiffNormal <- ifelse(notFittingItems$Difficulty > mean(params$b) - sd(params$b) & notFittingItems$Difficulty < mean(params$b) + sd(params$b), 1, 0)
-write.csv(notFittingItems, file = "Results/notFittingItems.csv", fileEncoding = "utf-8", row.names = F)
+write.csv(notFittingItems, file = "Results/Not fitting items.csv", fileEncoding = "utf-8", row.names = F)
 
 #Check not fitting categories
 # notFittingCategories <- sort(table(notFittingItems$Kategoria), decreasing = TRUE)
 notFittingCategories <- sort(table(notFittingItems$Kategoria) / table(cdi$Kategoria), decreasing = TRUE)
-write.table(notFittingCategories, file = "Results/notFittingCategoriesPercents.txt", sep = "\t", col.names = c("Category", "Percent of not fitting items"), row.names = FALSE)
+write.table(notFittingCategories, file = "Results/Not fitting categories (percents).txt", sep = "\t", col.names = c("Category", "Percent of not fitting items"), row.names = FALSE)

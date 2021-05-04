@@ -1,0 +1,26 @@
+"Category"	"Number of items"
+"Z16.czasowniki"	53
+"Z08.w_domu"	16
+"Z07.czêœci_cia³a"	12
+"Z04.pokarmy"	10
+"Z12.osoby"	10
+"Z01.odg³osy"	9
+"Z10.na_dworze"	9
+"Z20.zaimki_osobowe"	9
+"Z09.przedmioty_domowego_u¿ytku"	7
+"Z19.okreœlenia_miary"	7
+"Z05.zabawki"	6
+"Z13.formu³y"	6
+"Z17.okreœlenia_miejsca"	6
+"Z06.ubrania"	5
+"Z14.przymiotniki"	5
+"Z18.okreœlenia_czasu"	5
+"Z23.przys³ówki_modalne"	5
+"Z02.zwierzêta"	4
+"Z03.pojazdy"	2
+"Z11.miejsca_gdzie_mo¿na_pójœæ"	2
+"Z21.zaimki_wskazuj¹ce"	2
+"Z22.pytania"	2
+"Z15.przys³ówki"	1
+"Z24.przyimki"	1
+"Z25.spójniki"	1

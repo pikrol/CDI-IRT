@@ -1,8 +1,12 @@
+library(rstudioapi)
 library(mirtCAT) #For CAT simulations
 library(parallel) #For making many simulations in parallel
 library(beepr) #For sound signal when simulations are done
 library(ggpubr) #For making plots
 source("Functions/plotSave.R") #For saving ggplots
+
+#Set proper current working directory
+setwd(dirname(getActiveDocumentContext()$path))
 
 #------------
 #PREPARE DATA
@@ -11,13 +15,12 @@ source("Functions/plotSave.R") #For saving ggplots
 #Load responses and params
 params <- read.csv("Data/params.csv", encoding = "UTF-8")
 responsesDemo <- read.csv("Data/responsesDemo.csv", encoding = "UTF-8")
-folder0 <- "NotRestricted/"
 
 #Adjust data for restricted set of items (remove not fitting items)
 load("Data/notFitting")
-params <- params[!is.element(params$Numer, notFitting), ]
+params <- params[!is.element(params$number.ws, notFitting), ]
 responsesDemo <- responsesDemo[, -which(names(responsesDemo) %in% paste0("item", notFitting))]
-folder0 <- "RestrictedP05"
+folder0 <- "Simulations"
 
 #Prepare params df (convert difficulty from classic IRT to mirt format)
 paramsToMirt <- data.frame(a1 = params$a, d = params$b * params$a * (-1))
@@ -80,7 +83,7 @@ startThetas <- as.matrix(startThetas)
 #------------
 
 # 2. Fixed number of items
-itemsNr <- 5
+itemsNr <- 25
 
 # 2.1. No start theta given
 titleSufix <- "no start theta given"

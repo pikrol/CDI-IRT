@@ -1,0 +1,26 @@
+"Category"	"Percent of items used"
+"Z01.odg³osy"	0.75
+"Z23.przys³ówki_modalne"	0.625
+"Z20.zaimki_osobowe"	0.529411764705882
+"Z08.w_domu"	0.516129032258065
+"Z07.czêœci_cia³a"	0.461538461538462
+"Z16.czasowniki"	0.430894308943089
+"Z17.okreœlenia_miejsca"	0.375
+"Z12.osoby"	0.37037037037037
+"Z19.okreœlenia_miary"	0.35
+"Z05.zabawki"	0.333333333333333
+"Z13.formu³y"	0.315789473684211
+"Z10.na_dworze"	0.3
+"Z18.okreœlenia_czasu"	0.277777777777778
+"Z21.zaimki_wskazuj¹ce"	0.222222222222222
+"Z06.ubrania"	0.208333333333333
+"Z22.pytania"	0.153846153846154
+"Z04.pokarmy"	0.151515151515152
+"Z14.przymiotniki"	0.151515151515152
+"Z09.przedmioty_domowego_u¿ytku"	0.145833333333333
+"Z03.pojazdy"	0.142857142857143
+"Z11.miejsca_gdzie_mo¿na_pójœæ"	0.111111111111111
+"Z25.spójniki"	0.111111111111111
+"Z02.zwierzêta"	0.0930232558139535
+"Z15.przys³ówki"	0.0769230769230769
+"Z24.przyimki"	0.0666666666666667

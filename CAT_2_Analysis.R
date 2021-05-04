@@ -116,6 +116,13 @@ itemsAnsweredFreq$notFitting <- laply(itemsAnsweredFreq$itemNr, function(x){
 })
 
 #Save to file
-write.csv(itemsAnsweredFreq, file = "Results/whatItems15.csv", fileEncoding = "utf-8", row.names = F)
+write.csv(itemsAnsweredFreq, file = "Results/Which items (25i).csv", fileEncoding = "utf-8", row.names = F)
 
+#Check which categories were most present in simulations
+categoriesFreq <- sort(table(itemsAnsweredFreq$category), decreasing = TRUE)
+write.table(categoriesFreq, file = "Results/Number of items used with respect to category.txt", sep = "\t", col.names = c("Category", "Number of items"), row.names = FALSE)
+
+#Check how many items were used from particular categories
+categoriesFreq <- sort(table(itemsAnsweredFreq$category) / table(cdi$Kategoria), decreasing = TRUE)
+write.table(categoriesFreq, file = "Results/Percents of items from categories.txt", sep = "\t", col.names = c("Category", "Percent of items used"), row.names = FALSE)
 
