@@ -17,7 +17,8 @@ data <- data[, c("DZIECKO_ID", "KOD", "WiekDni", "WiekMiesiące", "Płeć", "Wer
 cdi <- data[, c("Kategoria", "Numer", "NumerSiG", "Pozycja")]
 cdi <- unique(cdi)
 cdi <- cdi[order(cdi$Numer),]
-cdi$Numer <- as.character(cdi$Numer)
+row.names(cdi) <- NULL
+colnames(cdi) <- c("category", "number.ws", "number.wg", "position")
 write.csv(cdi, file = "Data/cdi.csv", fileEncoding = "utf-8", row.names = F)
 
 #Remove wg version
@@ -31,16 +32,20 @@ data <- reshape(data,
                    v.names = "M",           
                    drop = c("DZIECKO_ID", "R", "Pozycja", "Kategoria", "NumerSiG", "Wersja"))
 
-#Prepare answers matrix
+#Prepare responses matrix
 responses <- as.matrix(data[,5:ncol(data)])
-
-#Remove "M." from column names
 colnames(responses) <- paste0("item", substring(colnames(responses), 3))
-
-#Prepare responses df with demographic variables for CAT simulations
 responses <- responses[, order(as.integer(substring(colnames(responses), 5)))]
+
+#Prepare responses df with demographic variables
 responsesDemo <- merge(data[1:4], responses, by=0)
 responsesDemo$Row.names <- NULL
 responsesDemo <- responsesDemo[order(responsesDemo$KOD), ]
 rownames(responsesDemo) <- NULL
-#write.csv(responsesDemo, file = "Data/responsesDemo.csv", fileEncoding = "utf-8", row.names = F)
+
+#Change to english names
+names(responsesDemo)[names(responsesDemo) == 'KOD'] <- 'code'
+names(responsesDemo)[names(responsesDemo) == 'WiekDni'] <- 'days'
+names(responsesDemo)[names(responsesDemo) == 'WiekMiesiące'] <- 'months'
+names(responsesDemo)[names(responsesDemo) == 'Płeć'] <- 'gender'
+write.csv(responsesDemo, file = "Data/responsesDemo.csv", fileEncoding = "utf-8", row.names = F)
