@@ -77,7 +77,7 @@ startItem <- "MI"
 folderSufix <- paste(method, criteria, startItem)
 
 # 2. Fixed number of items
-itemsNr <- 50
+itemsNr <- 20
 
 # 2.1. No start theta given
 titleSufix <- paste0("no start theta given (", folderSufix, ")")
