@@ -35,6 +35,10 @@ responses <- as.matrix(responsesDemo[,5:ncol(responsesDemo)])
 #Prepare full thetas
 fullThetasDf <- read.csv("Data/fullThetasDf.csv", encoding = "UTF-8")
 
+#-------------------------------
+#PREPARE START THETAS [OPTIONAL]
+#-------------------------------
+
 #Get full thetas aggregated by days or weeks or months (put proper below - days, weeks, months)
 fullThetasAggr <- aggregate(fullTheta ~ months + gender , data = fullThetasDf, mean)
 dateUnit <- colnames(fullThetasAggr)[1]
@@ -67,14 +71,19 @@ startThetas <- as.matrix(startThetas)
 #SIMULATE CAT 
 #------------
 
+method <- "EAP"
+criteria <- "MI"
+startItem <- "MI"
+folderSufix <- paste(method, criteria, startItem)
+
 # 2. Fixed number of items
-itemsNr <- 5
+itemsNr <- 50
 
 # 2.1. No start theta given
-titleSufix <- "no start theta given"
-folder <- "No start theta"
+titleSufix <- paste0("no start theta given (", folderSufix, ")")
+folder <- paste0("No start theta ", folderSufix)
 design <- list(min_items = itemsNr, max_items = itemsNr)
-results <- mirtCAT(mo = mirtObject, method = 'EAP', criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = design)
+results <- mirtCAT(mo = mirtObject, method = method, criteria = criteria, start_item = startItem, local_pattern = responses, cl = cl, design = design)
 
 # 2.2. Initial thetas estimates given
 # titleSufix <- paste0("start theta given by gender and age in ", tolower(xlab))

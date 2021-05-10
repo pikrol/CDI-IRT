@@ -1,6 +1,7 @@
 library(rstudioapi)#For setting current working directory
 library(mirt) #For creation of model
 library(ggpubr) #For making plots
+source("Functions/plotSave.R") #For saving ggplots
 options(max.print=999999)
 
 #Set proper current working directory
@@ -60,30 +61,46 @@ ggplot(params, aes(b, a, label = position, colour = category)) +
 #FULL THETAS
 #-----------
 
+#Speeds up computations
+mirtCluster()
+
 #Obtain full thetas
-# fullThetas <- fscores(model)
+method <- "EAP"
+fullThetas <- as.data.frame(fscores(model, method = method, full.scores.SE = TRUE))
 
 #Prepare full thetas df
-# fullThetasDf <- responsesDemo[,1:4]
-# fullThetasDf$fullTheta <- fullThetas
-# fullThetasDf$weeks <- ceiling(fullThetasDf$days/7)
-# write.csv(fullThetasDf, file = "Data/fullThetasDf.csv", fileEncoding = "utf-8", row.names = F)
+fullThetasDf <- responsesDemo[,1:4]
+fullThetasDf$fullTheta <- fullThetas$F1
+fullThetasDf$SE <- fullThetas$SE_F1
+fullThetasDf$weeks <- ceiling(fullThetasDf$days/7)
 
-#Read already prepared full thetas
-fullThetasDf <- read.csv("Data/fullThetasDf.csv", encoding = "UTF-8")
+#Set plots path
+plotsPath <- "Results/Plots/"
+if(!dir.exists(file.path(plotsPath, method))) dir.create(file.path(plotsPath, method))
+plotsPath <- paste0(plotsPath, method, "/")
 
 #Plot full thetas histogram
-png("Results/Plots/Full thetas.png", width = 853, pointsize = 16)
-hist(fullThetasDf$fullTheta, xlab = "Theta", main = "Histogram of full thetas")
+png(paste0(plotsPath, "Full thetas histogram.png"), width = 853, pointsize = 16)
+hist(fullThetasDf$fullTheta, xlab = "Theta", main = paste0("Histogram of full thetas - ", method, " estimation"))
 dev.off()
+
+#Plot full theta vs. SE
+title <- paste0("Full theta vs. SE - ", method, " estimation")
+plot <- ggscatter(fullThetasDf, y = "SE", x = "fullTheta",
+                  xlab = "Theta", ylab = "SE", title = title)
+print(plot)
+plotSave(plot, filename = paste0(plotsPath, "Full theta vs. SE.png"))
 
 #Plot full thetas distribution in age groups
 fullThetasAge <- data.frame(age = responsesDemo$months, fullTheta = fullThetasDf$fullTheta)
-gghistogram(fullThetasAge, x = "F1", bins = 10) + 
+gghistogram(fullThetasAge, x = "fullTheta", bins = 10) + 
   facet_wrap(~age) + 
-  labs(title = "Full thetas distribution in particular age groups") + 
+  labs(title = paste0("Full thetas distribution in particular age groups - ", method, " estimation")) + 
   xlab("Full theta") + 
   ylab("Count")
+
+#Save full thetas to file
+write.csv(fullThetasDf, file = "Data/fullThetasDf.csv", fileEncoding = "utf-8", row.names = F)
 
 #---------
 #ITEMS FIT 

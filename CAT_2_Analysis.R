@@ -2,18 +2,14 @@ library(plyr) #For laply
 library(dplyr) #For distribution analysis
 library(forcats) #For data imputation (replacing NAs)
 
-#Get results
+#Read thetas, SEs and items answered
 thetas <- laply(results, function(x) x$thetas)
 SEthetas <- laply(results, function(x) x$SE_thetas)
+itemsAnswered <- laply(results, function(x) x$items_answered)
 
 #Update meanSE
 meanSE[meanSE$items == itemsNr, "meanSE"] <- mean(SEthetas)
 write.csv(meanSE, file = meanSEfile, fileEncoding = "utf-8", row.names = F)
-
-#Get items used and their frequency
-itemsAnswered <- laply(results, function(x) x$items_answered)
-itemsAnsweredFreq <- as.data.frame(table(as.vector(itemsAnswered)))
-colnames(itemsAnsweredFreq) <- c("itemNr", "freq")
 
 #--------------------------------------------
 #CORRELATION BETWEEN ESTIMATED AND TRUE THETA
@@ -28,9 +24,24 @@ plot <- ggscatter(data.frame(estTheta = thetas, fullTheta = fullThetasDf$fullThe
 print(plot)
 plotSave(plot, filename = paste0(simFolder, "cor - ", itemsNr, " items", ".png"))
 
+#------------
+#THETA VS. SE
+#------------
+
+#Plot est.theta vs. SE
+title <- paste0(itemsNr, " items - ", titleSufix)
+plot <- ggscatter(data.frame(estTheta = thetas, SE = SEthetas), y = "SE", x = "estTheta", #shape=21 for empty points
+                  xlab = "Theta", ylab = "SE", title = title)
+print(plot)
+plotSave(plot, filename = paste0(simFolder, "SE - ", itemsNr, " items", ".png"))
+
 #------------------------------
 #DISTRIBUTION OF USAGE OF ITEMS
 #------------------------------
+
+#Prepare df with items used and their frequency
+itemsAnsweredFreq <- as.data.frame(table(as.vector(itemsAnswered)))
+colnames(itemsAnsweredFreq) <- c("itemNr", "freq")
 
 #Prepare frequency df
 frequencyDf <- data.frame(itemNr = 1 : nrow(params))
@@ -59,58 +70,49 @@ plot <- ggplot(df, aes(x = cut, y = count)) +
 print(plot)
 plotSave(plot, filename = paste0(simFolder, "distr - ", itemsNr, " items", ".png"))
 
-#------------
-#THETA VS. SE
-#------------
-
-#Plot est.theta vs. SE
-title <- paste0(itemsNr, " items - ", titleSufix)
-plot <- ggscatter(data.frame(estTheta = thetas, SE = SEthetas), y = "SE", x = "estTheta", #shape=21 for empty points
-                  xlab = "Theta", ylab = "SE", title = title)
-print(plot)
-plotSave(plot, filename = paste0(simFolder, "SE - ", itemsNr, " items", ".png"))
-
 #----------------------------
 #MEAN SE VS. NUMEBER OF ITEMS
 #----------------------------
 
-plot <- ggplot(meanSEs, aes(items, meanSE)) + geom_point() + geom_line() + xlab("Number of items") + ylab("Mean SE") +
-  ggtitle("Change of mean standard error with number of items")
+plot <- ggplot(meanSE, aes(items, meanSE)) + geom_point() + geom_line() + xlab("Number of items") + ylab("Mean SE") +
+  ggtitle(paste0("Mean SE vs. number of items - ", titleSufix))
 print(plot)
-plotSave(plot, filename = paste0(resultsFolder, "Mean SE vs. items number", ".png"))
+plotSave(plot, filename = paste0(simFolder, "Mean SE vs. number of items", ".png"))
 
-#----------------
-#WHAT ITEMS USED?
-#----------------
+#---------------------
+#WHAT CATEGORIES USED?
+#---------------------
 
-#Calculate frequency
+catsAnswered <- as.vector(itemsAnswered)
+catsAnswered <- cdi[catsAnswered, "category"]
+catsAnswered <- sort(table(catsAnswered)/length(catsAnswered), decreasing = TRUE)
+write.table(catsAnswered, file = paste0(simFolder, "Popular categories - ", itemsNr, " items.txt"), sep = "\t", col.names = c("Category", "Percent of items used"), row.names = FALSE)
+
+#-----------------
+#WHICH ITEMS USED?
+#-----------------
+
+#Prepare df with items used and their frequency
+itemsAnsweredFreq <- as.data.frame(table(as.vector(itemsAnswered)))
+colnames(itemsAnsweredFreq) <- c("itemNr", "freq")
 itemsAnsweredFreq$freq <- round(itemsAnsweredFreq$freq/length(results), 2)
 
 #Add position & category
 cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
-cdi$itemNr <- cdi$Numer
+cdi$itemNr <- cdi$number.ws
 itemsAnsweredFreq <- merge(itemsAnsweredFreq, cdi, by="itemNr")
-itemsAnsweredFreq <- within(itemsAnsweredFreq, rm(Numer, NumerSiG))
+itemsAnsweredFreq <- within(itemsAnsweredFreq, rm(number.ws, number.wg))
 itemsAnsweredFreq <- itemsAnsweredFreq[order(itemsAnsweredFreq$freq, decreasing = TRUE), ]
 colnames(itemsAnsweredFreq) <- c("itemNr", "freq", "category", "position")
 
-#Add column saying whether item is not fitting (1) or fitting (0)
-itemsAnsweredFreq$notFitting <- laply(itemsAnsweredFreq$itemNr, function(x){
-  if (is.element(x, notFitting)){
-    return(1)
-  } else {
-    return(0)
-  }
-})
-
 #Save to file
-write.csv(itemsAnsweredFreq, file = "Results/Which items (25i).csv", fileEncoding = "utf-8", row.names = F)
-
-#Check which categories were most present in simulations
-categoriesFreq <- sort(table(itemsAnsweredFreq$category), decreasing = TRUE)
-write.table(categoriesFreq, file = "Results/Number of items used with respect to category.txt", sep = "\t", col.names = c("Category", "Number of items"), row.names = FALSE)
-
-#Check how many items were used from particular categories
-categoriesFreq <- sort(table(itemsAnsweredFreq$category) / table(cdi$Kategoria), decreasing = TRUE)
-write.table(categoriesFreq, file = "Results/Percents of items from categories.txt", sep = "\t", col.names = c("Category", "Percent of items used"), row.names = FALSE)
+write.csv(itemsAnsweredFreq, file = paste0(simFolder, "Which items - ", itemsNr, "i.csv"), fileEncoding = "utf-8", row.names = F)
+# 
+# #Check which categories were most present in simulations
+# categoriesFreq <- sort(table(itemsAnsweredFreq$category), decreasing = TRUE)
+# write.table(categoriesFreq, file = "Results/Number of items used with respect to category.txt", sep = "\t", col.names = c("Category", "Number of items"), row.names = FALSE)
+# 
+# #Check how many items were used from particular categories
+# categoriesFreq <- sort(table(itemsAnsweredFreq$category) / table(cdi$Kategoria), decreasing = TRUE)
+# write.table(categoriesFreq, file = "Results/Percents of items from categories.txt", sep = "\t", col.names = c("Category", "Percent of items used"), row.names = FALSE)
 
