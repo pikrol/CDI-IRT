@@ -9,8 +9,8 @@ source("Functions/plotSave.R") #For saving ggplots
 setwd(dirname(getActiveDocumentContext()$path))
 
 #Prepare results datapath
-resultsPath <- paste0(getwd(), "/Results")
-plotsPath <- paste0(resultsPath, "/Plots/")
+resultsPath <- paste0(getwd(), "/Results/")
+plotsPath <- paste0(resultsPath, "Plots/")
 
 #------------
 #PREPARE DATA

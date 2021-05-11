@@ -83,11 +83,17 @@ plotSave(plot, filename = paste0(simFolder, "Mean SE vs. number of items", ".png
 #WHAT CATEGORIES USED?
 #---------------------
 
+cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
 catsAnswered <- as.vector(itemsAnswered)
 catsAnswered <- cdi[catsAnswered, "category"]
 catsAnswered <- sort(table(catsAnswered)/length(catsAnswered), decreasing = TRUE)
 write.table(catsAnswered, file = paste0(simFolder, "Popular categories - ", itemsNr, " items.txt"), sep = "\t", col.names = c("Category", "Percent of items used"), row.names = FALSE)
 
+#--------------
+#CDI CATEGORIES
+#--------------
+cdiCategories <- sort(table(cdi$category)/nrow(cdi), decreasing = TRUE)
+write.table(cdiCategories, file = paste0(resultsPath, "cdi categories.txt"), sep = "\t", col.names = c("Category", "Percent of items"), row.names = FALSE)
 #-----------------
 #WHICH ITEMS USED?
 #-----------------
