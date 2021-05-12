@@ -5,35 +5,57 @@ library(forcats) #For data imputation (replacing NAs)
 #Read thetas, SEs and items answered
 thetas <- laply(results, function(x) x$thetas)
 SEthetas <- laply(results, function(x) x$SE_thetas)
-itemsAnswered <- laply(results, function(x) x$items_answered)
+itemsAnswered <- laply(results, function(x) x$items_answered) #if no SE criterion
+if (exists("SE")) testsLengths <- laply(results, function(x) length(x$items_answered)) #if SE criterion
+
+#Check average length of the test (if min SE stop criterion)
+averageLength <- mean(laply(results, function(x) length(x$items_answered)))
 
 #Update meanSE (if number of items stop criterion used)
-meanSE[meanSE$items == itemsNr, "meanSE"] <- mean(SEthetas)
-write.csv(meanSE, file = meanSEfile, fileEncoding = "utf-8", row.names = F)
+if (exists("itemsNr")){
+  meanSE[meanSE$items == itemsNr, "meanSE"] <- mean(SEthetas)
+  write.csv(meanSE, file = meanSEfile, fileEncoding = "utf-8", row.names = F)
+}
+
+#----------------------------------------------------------------------
+#INVESTIGATE TESTS LENGTHS [OPTIONAL - USE ONLY WITH SE STOP CRITERION]
+#----------------------------------------------------------------------
+
+cuts <- cut(testsLengths, breaks = c(0, 10, 20, 50, 100, 200, 669, 670), labels = c("1 - 10", "11 - 20", "21 - 50", "51 - 100", "101 - 200", "201 - 669", "670"), dig.lab = 0)
+df <- as.data.frame(table(cuts))
+
+#Plot distribution
+plot <- ggplot(df, aes(x = cuts, y = Freq)) +
+  xlab("Number of items") +
+  ylab("Number of tests") +
+  geom_bar(stat = "identity") +
+  ggtitle(paste0(title, "\nAverage test length: ", round(mean(testsLengths), 2))) +
+  geom_text(aes(label = Freq), vjust = -0.3) + 
+  theme_pubclean() 
+print(plot)
+plotSave(plot, filename = paste0(simFolder, "tests lengths.png"))
 
 #--------------------------------------------
 #CORRELATION BETWEEN ESTIMATED AND TRUE THETA
 #--------------------------------------------
 
 #Plot est. theta vs. true theta
-title <- paste0(itemsNr, " items - ", titleSufix)
 plot <- ggscatter(data.frame(estTheta = thetas, fullTheta = fullThetasDf$fullTheta), y = "fullTheta", x = "estTheta",
                   add = "reg.line", conf.int = TRUE,
                   cor.coef = TRUE, cor.method = "pearson",
                   xlab = "Estimated Theta", ylab = "True Theta", title = title)
 print(plot)
-plotSave(plot, filename = paste0(simFolder, "cor - ", itemsNr, " items", ".png"))
+plotSave(plot, filename = corFileName)
 
 #------------
 #THETA VS. SE
 #------------
 
 #Plot est.theta vs. SE
-title <- paste0(itemsNr, " items - ", titleSufix)
 plot <- ggscatter(data.frame(estTheta = thetas, SE = SEthetas), y = "SE", x = "estTheta", #shape=21 for empty points
-                  xlab = "Theta", ylab = "SE", title = title)
+                  xlab = "Theta", ylab = "SE", title = paste0(title, "\nAverage SE: ", round(mean(SEthetas),2)))
 print(plot)
-plotSave(plot, filename = paste0(simFolder, "SE - ", itemsNr, " items", ".png"))
+plotSave(plot, filename = seFileName)
 
 #------------------------------
 #DISTRIBUTION OF USAGE OF ITEMS
@@ -61,7 +83,6 @@ df <- frequencyDf %>%
 df$cut <- factor(df$cut,levels(df$cut)[c(6,1,2,3,4,5)])
 
 #Plot distribution
-title <- paste0(itemsNr, " items - ", titleSufix)
 plot <- ggplot(df, aes(x = cut, y = count)) +
   geom_bar(stat = "identity") +
   ggtitle(title) +

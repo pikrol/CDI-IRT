@@ -81,7 +81,12 @@ folderSufix <- paste(method, criteria, startItem)
 
 # 2.1. No start theta given
 # titleSufix <- paste0("no start theta given (", folderSufix, ")")
+# title <- paste0(itemsNr, " items - ", titleSufix)
 # folder <- paste0("No start theta ", folderSufix)
+# corFileName <- paste0(simFolder, "cor - ", itemsNr, " items", ".png")
+# seFileName <- paste0(simFolder, "SE - ", itemsNr, " items", ".png")
+# distrFileName <- paste0(simFolder, "distr - ", itemsNr, " items", ".png")
+
 # design <- list(min_items = itemsNr, max_items = itemsNr)
 # results <- mirtCAT(mo = mirtObject, method = method, criteria = criteria, start_item = startItem, local_pattern = responses, cl = cl, design = design)
 
@@ -96,8 +101,13 @@ folderSufix <- paste(method, criteria, startItem)
 SE <- 0.173 #it corresponds to reliability of 0.97 (stabilność czasowa SiZ - słownictwo czynne)
 
 # 3.1. No start theta given
-titleSufix <- paste0("SE 0.17 no start theta given(", folderSufix, ")")
-folder <- paste0("SE 0.17 no start theta ", folderSufix)
+titleSufix <- paste0("SE ", SE, " no start theta given (", folderSufix, ")")
+title <- titleSufix
+folder <- paste0("SE ", SE,  " no start theta ", folderSufix)
+corFileName <- paste0(simFolder, "correlation.png")
+seFileName <- paste0(simFolder, "SE.png")
+distrFileName <- paste0(simFolder, "distr.png")
+
 design <- list(min_SEM = SE)
 results <- mirtCAT(mo = mirtObject, method = method, criteria = criteria, start_item = startItem, local_pattern = responses, cl = cl, design = design)
 save(results, file = "Data/results_SE_017")
@@ -105,7 +115,7 @@ load("Data/results_SE_017")
 
 #Prepare simulation folder
 if(!dir.exists(file.path(resultsPath, folder))) dir.create(file.path(resultsPath, folder))
-simFolder <- paste0(resultsPath, "/", folder, "/")
+simFolder <- paste0(resultsPath, folder, "/")
 
 #Prepare mean SE csv (if number of items stop criterion used)
 # meanSEfile <- paste0(simFolder, "meanSE.csv")
