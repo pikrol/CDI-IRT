@@ -7,7 +7,7 @@ thetas <- laply(results, function(x) x$thetas)
 SEthetas <- laply(results, function(x) x$SE_thetas)
 itemsAnswered <- laply(results, function(x) x$items_answered)
 
-#Update meanSE
+#Update meanSE (if number of items stop criterion used)
 meanSE[meanSE$items == itemsNr, "meanSE"] <- mean(SEthetas)
 write.csv(meanSE, file = meanSEfile, fileEncoding = "utf-8", row.names = F)
 
@@ -92,8 +92,10 @@ write.table(catsAnswered, file = paste0(simFolder, "Popular categories - ", item
 #--------------
 #CDI CATEGORIES
 #--------------
+
 cdiCategories <- sort(table(cdi$category)/nrow(cdi), decreasing = TRUE)
 write.table(cdiCategories, file = paste0(resultsPath, "cdi categories.txt"), sep = "\t", col.names = c("Category", "Percent of items"), row.names = FALSE)
+
 #-----------------
 #WHICH ITEMS USED?
 #-----------------

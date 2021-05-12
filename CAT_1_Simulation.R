@@ -77,13 +77,13 @@ startItem <- "MI"
 folderSufix <- paste(method, criteria, startItem)
 
 # 2. Fixed number of items
-itemsNr <- 20
+# itemsNr <- 20
 
 # 2.1. No start theta given
-titleSufix <- paste0("no start theta given (", folderSufix, ")")
-folder <- paste0("No start theta ", folderSufix)
-design <- list(min_items = itemsNr, max_items = itemsNr)
-results <- mirtCAT(mo = mirtObject, method = method, criteria = criteria, start_item = startItem, local_pattern = responses, cl = cl, design = design)
+# titleSufix <- paste0("no start theta given (", folderSufix, ")")
+# folder <- paste0("No start theta ", folderSufix)
+# design <- list(min_items = itemsNr, max_items = itemsNr)
+# results <- mirtCAT(mo = mirtObject, method = method, criteria = criteria, start_item = startItem, local_pattern = responses, cl = cl, design = design)
 
 # 2.2. Initial thetas estimates given
 # titleSufix <- paste0("start theta given by gender and age in ", tolower(xlab))
@@ -91,17 +91,29 @@ results <- mirtCAT(mo = mirtObject, method = method, criteria = criteria, start_
 # design <- list(min_items = itemsNr, max_items = itemsNr, thetas.start = as.vector(4))
 # results <- mirtCAT(mo = mirtObject, method = 'ML', criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = design)
 
+# 3. Min SE stop criterion
+
+SE <- 0.173 #it corresponds to reliability of 0.97 (stabilność czasowa SiZ - słownictwo czynne)
+
+# 3.1. No start theta given
+titleSufix <- paste0("SE 0.17 no start theta given(", folderSufix, ")")
+folder <- paste0("SE 0.17 no start theta ", folderSufix)
+design <- list(min_SEM = SE)
+results <- mirtCAT(mo = mirtObject, method = method, criteria = criteria, start_item = startItem, local_pattern = responses, cl = cl, design = design)
+save(results, file = "Data/results_SE_017")
+load("Data/results_SE_017")
+
 #Prepare simulation folder
 if(!dir.exists(file.path(resultsPath, folder))) dir.create(file.path(resultsPath, folder))
 simFolder <- paste0(resultsPath, "/", folder, "/")
 
-#Prepare mean SE csv
-meanSEfile <- paste0(simFolder, "meanSE.csv")
-if (file.exists(meanSEfile)){
-  meanSE <- read.csv(meanSEfile)
-  if (!is.element(itemsNr, meanSE$items))   meanSE <- rbind(meanSE, c(itemsNr, 0))
-} else {
-  meanSE <- data.frame(items = itemsNr, meanSE = 0)
-}
+#Prepare mean SE csv (if number of items stop criterion used)
+# meanSEfile <- paste0(simFolder, "meanSE.csv")
+# if (file.exists(meanSEfile)){
+#   meanSE <- read.csv(meanSEfile)
+#   if (!is.element(itemsNr, meanSE$items))   meanSE <- rbind(meanSE, c(itemsNr, 0))
+# } else {
+#   meanSE <- data.frame(items = itemsNr, meanSE = 0)
+# }
 
 beep(sound=8)
