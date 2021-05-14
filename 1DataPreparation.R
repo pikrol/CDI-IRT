@@ -21,6 +21,10 @@ row.names(cdi) <- NULL
 colnames(cdi) <- c("category", "number.ws", "number.wg", "position")
 write.csv(cdi, file = "Data/cdi.csv", fileEncoding = "utf-8", row.names = F)
 
+#Create table with cdi categories and percents of items
+cdiCategories <- sort(table(cdi$category)/nrow(cdi), decreasing = TRUE)
+write.table(cdiCategories, file = paste0(getwd(), "/Results/", "cdi categories.txt"), sep = "\t", col.names = c("Category", "Percent of items"), row.names = FALSE)
+
 #Remove wg version
 data <- data[data$Wersja=="Z",]
 
