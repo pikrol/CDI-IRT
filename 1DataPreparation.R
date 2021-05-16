@@ -21,10 +21,14 @@ row.names(cdi) <- NULL
 colnames(cdi) <- c("category", "number.ws", "number.wg", "position")
 write.csv(cdi, file = "Data/cdi.csv", fileEncoding = "utf-8", row.names = F)
 
-#Remove wg version
+#Create table with cdi categories and percents of items
+cdiCategories <- sort(table(cdi$category)/nrow(cdi), decreasing = TRUE)
+#write.table(cdiCategories, file = paste0(getwd(), "/Results/", "cdi_categories.txt"), sep = "\t", col.names = c("Category", "Percent of items"), fileEncoding = "utf-8", row.names = FALSE)
+
+#Choose version
 data <- data[data$Wersja=="Z",]
 
-#Reshape into wide format
+#Reshape into wide format (v.names = M|R and drop the other one)
 data <- reshape(data,                           
                    timevar = "Numer",            
                    idvar = c("KOD","WiekDni","WiekMiesiące","Płeć"),        
@@ -43,8 +47,8 @@ responsesDemo$Row.names <- NULL
 responsesDemo <- responsesDemo[order(responsesDemo$KOD), ]
 rownames(responsesDemo) <- NULL
 
-#Change to english names
-names(responsesDemo)[names(responsesDemo) == 'KOD'] <- 'code'
+#Change to English names
+names(responsesDemo)[names(responsesDemo) == 'KOD'] <- 'participant'
 names(responsesDemo)[names(responsesDemo) == 'WiekDni'] <- 'days'
 names(responsesDemo)[names(responsesDemo) == 'WiekMiesiące'] <- 'months'
 names(responsesDemo)[names(responsesDemo) == 'Płeć'] <- 'gender'
