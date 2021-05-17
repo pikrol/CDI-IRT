@@ -40,7 +40,7 @@ fullThetasDf <- read.csv("Data/fullThetasDf.csv", encoding = "UTF-8")
 #-------------------------------
 
 #Get full thetas aggregated by days or weeks or months (put proper below - days, weeks, months)
-fullThetasAggr <- aggregate(fullTheta ~ days + gender , data = fullThetasDf, mean)
+fullThetasAggr <- aggregate(fullTheta ~ months + gender , data = fullThetasDf, mean)
 dateUnit <- colnames(fullThetasAggr)[1]
 
 #Plot full theta vs. date unit
@@ -133,8 +133,8 @@ fixedNumberStop <- FALSE
     folder <- paste0("SE ", SE,  " start theta by gender and ", dateUnit, " ", folderSufix)
     design <- list(min_SEM = SE, thetas.start = startThetas)
     results <- mirtCAT(mo = mirtObject, method = method, criteria = criteria, start_item = startItem, local_pattern = responses, cl = cl, design = design)
-    save(results, file = paste0("Data/", "results_startTheta_SE_", SE))
-    load(paste0("Data/", "results_startTheta_SE_", SE))
+    # save(results, file = paste0("Data/", "results_startTheta_SE_", SE))
+    # load(paste0("Data/", "results_startTheta_SE_", SE))
     
 # Prepare files names simulation folder name
 simFolder <- paste0(resultsPath, folder, "/")
