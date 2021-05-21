@@ -1,4 +1,7 @@
-Data/irmik_lex.csv
+Data/*
+Results/*
 .Rhistory
 todo.txt
-
+.DS_Store
+.Rproj.user
+*.Rproj
