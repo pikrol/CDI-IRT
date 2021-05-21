@@ -9,8 +9,8 @@ source("Functions/plotSave.R") #For saving ggplots
 setwd(dirname(getActiveDocumentContext()$path))
 
 #Prepare results datapath
-resultsPath <- paste0(getwd(), "/Results")
-plotsPath <- paste0(resultsPath, "/Plots/")
+resultsPath <- paste0(getwd(), "/Results/Simulations/")
+plotsPath <- paste0(getwd(), "/Results/Plots/")
 
 #------------
 #PREPARE DATA
@@ -64,8 +64,17 @@ dateUnit <- colnames(fullThetasAggr)[1]
 obtainStartThetas <- function(age, gender){
   return(fullThetasAggr[fullThetasAggr[[dateUnit]] == age & fullThetasAggr$gender == gender, "fullTheta"])
 }
-startThetas <- mapply(obtainStartThetas, fullThetasDemo[[dateUnit]], fullThetasDemo$Płeć)
+startThetas <- mapply(obtainStartThetas, fullThetasDf[[dateUnit]], fullThetasDf$gender)
 startThetas <- as.matrix(startThetas)
+
+#Plot full theta vs. start theta
+# title <- paste0("Relation between full theta and start theta by gender and age in ", dateUnit)
+# plot <- ggscatter(data.frame(startTheta = startThetas, fullTheta = fullThetasDf$fullTheta), y = "fullTheta", x = "startTheta",
+#                   add = "reg.line", conf.int = TRUE,
+#                   cor.coef = TRUE, cor.method = "pearson",
+#                   xlab = "Calculated start theta", ylab = "Full theta", title = title)
+# print(plot)
+# plotSave(plot, filename = paste0(plotsPath, "Full theta vs. start theta by gender and ", dateUnit, ".png"))
 
 #------------
 #SIMULATE CAT 
@@ -76,32 +85,77 @@ criteria <- "MI"
 startItem <- "MI"
 folderSufix <- paste(method, criteria, startItem)
 
-# 2. Fixed number of items
-itemsNr <- 20
+### Uncomment one point from below ###
 
-# 2.1. No start theta given
-titleSufix <- paste0("no start theta given (", folderSufix, ")")
-folder <- paste0("No start theta ", folderSufix)
-design <- list(min_items = itemsNr, max_items = itemsNr)
-results <- mirtCAT(mo = mirtObject, method = method, criteria = criteria, start_item = startItem, local_pattern = responses, cl = cl, design = design)
+# 1. Fixed number of items stop criterion
+# itemsNr <- 20
+# fixedNumberStop <- TRUE
 
-# 2.2. Initial thetas estimates given
-# titleSufix <- paste0("start theta given by gender and age in ", tolower(xlab))
-# folder <- paste0("Start theta by ", tolower(xlab))
-# design <- list(min_items = itemsNr, max_items = itemsNr, thetas.start = as.vector(4))
-# results <- mirtCAT(mo = mirtObject, method = 'ML', criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = design)
+    ### Uncomment one subpoint from below ###
 
-#Prepare simulation folder
+    # 1.1. No start thetas
+    # titleSufix <- paste0("no start theta given (", folderSufix, ")")
+    # title <- paste0(itemsNr, " items - ", titleSufix)
+    # folder <- paste0("No start theta ", folderSufix)
+    # design <- list(min_items = itemsNr, max_items = itemsNr)
+    # results <- mirtCAT(mo = mirtObject, method = method, criteria = criteria, start_item = startItem, local_pattern = responses, cl = cl, design = design)
+    
+    # 1.2. Start thetas given
+    # titleSufix <- paste0("start theta given by gender and age in ", dateUnit, " (", folderSufix, ")")
+    # title <- paste0(itemsNr, " items - ", titleSufix)
+    # folder <- paste0("Start theta by gender and ", dateUnit, " ", folderSufix)
+    # design <- list(min_items = itemsNr, max_items = itemsNr, thetas.start = startThetas)
+    # results <- mirtCAT(mo = mirtObject, method = 'ML', criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = design)
+    
+# Prepare files names simulation folder name
+# simFolder <- paste0(resultsPath, folder, "/")
+# corFileName <- paste0(simFolder, "cor - ", itemsNr, " items", ".png")
+# seFileName <- paste0(simFolder, "SE - ", itemsNr, " items", ".png")
+# distrFileName <- paste0(simFolder, "distr - ", itemsNr, " items", ".png")
+
+# 2. Min SE stop criterion
+SE <- 0.173 #it corresponds to reliability of 0.97 (stabilność czasowa SiZ - słownictwo czynne)
+fixedNumberStop <- FALSE
+
+    ### Uncomment one subpoint from below ###
+    # 2.1. No start theta given
+    # titleSufix <- paste0("SE ", SE, " no start theta given (", folderSufix, ")")
+    # title <- titleSufix
+    # folder <- paste0("SE ", SE,  " no start theta ", folderSufix)
+    # design <- list(min_SEM = SE)
+    # results <- mirtCAT(mo = mirtObject, method = method, criteria = criteria, start_item = startItem, local_pattern = responses, cl = cl, design = design)
+    # save(results, file = paste0("Data/", "results_SE_", SE))
+    # load(paste0("Data/", "results_SE_", SE))
+    
+    # 2.2. Start thetas given
+    titleSufix <- paste0("SE ", SE, " start theta given by gender and age in ", dateUnit, " (", folderSufix, ")")
+    title <- titleSufix
+    folder <- paste0("SE ", SE,  " start theta by gender and ", dateUnit, " ", folderSufix)
+    design <- list(min_SEM = SE, thetas.start = startThetas)
+    results <- mirtCAT(mo = mirtObject, method = method, criteria = criteria, start_item = startItem, local_pattern = responses, cl = cl, design = design)
+    # save(results, file = paste0("Data/", "results_startTheta_SE_", SE))
+    # load(paste0("Data/", "results_startTheta_SE_", SE))
+    
+# Prepare files names simulation folder name
+simFolder <- paste0(resultsPath, folder, "/")
+corFileName <- paste0(simFolder, "correlation.png")
+seFileName <- paste0(simFolder, "SE.png")
+distrFileName <- paste0(simFolder, "distr.png")
+
+#---
+
+#Create simulation folder
 if(!dir.exists(file.path(resultsPath, folder))) dir.create(file.path(resultsPath, folder))
-simFolder <- paste0(resultsPath, "/", folder, "/")
 
-#Prepare mean SE csv
-meanSEfile <- paste0(simFolder, "meanSE.csv")
-if (file.exists(meanSEfile)){
-  meanSE <- read.csv(meanSEfile)
-  if (!is.element(itemsNr, meanSE$items))   meanSE <- rbind(meanSE, c(itemsNr, 0))
-} else {
-  meanSE <- data.frame(items = itemsNr, meanSE = 0)
+#Prepare mean SE csv (if fixed number of items stop criterion used)
+if (fixedNumberStop){
+  meanSEfile <- paste0(simFolder, "meanSE.csv")
+  if (file.exists(meanSEfile)){
+    meanSE <- read.csv(meanSEfile)
+    if (!is.element(itemsNr, meanSE$items)) meanSE <- rbind(meanSE, c(itemsNr, 0))
+  } else {
+    meanSE <- data.frame(items = itemsNr, meanSE = 0)
+  }
 }
 
 beep(sound=8)
