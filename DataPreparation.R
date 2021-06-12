@@ -19,11 +19,11 @@ cdi <- unique(cdi)
 cdi <- cdi[order(cdi$Numer),]
 row.names(cdi) <- NULL
 colnames(cdi) <- c("category", "number.ws", "number.wg", "position")
-write.csv(cdi, file = "Data/cdi.csv", fileEncoding = "utf-8", row.names = F)
+# write.csv(cdi, file = "Data/cdi.csv", fileEncoding = "utf-8", row.names = F)
 
 #Create table with cdi categories and percents of items
-cdiCategories <- sort(table(cdi$category)/nrow(cdi), decreasing = TRUE)
-#write.table(cdiCategories, file = paste0(getwd(), "/Results/", "cdi_categories.txt"), sep = "\t", col.names = c("Category", "Percent of items"), fileEncoding = "utf-8", row.names = FALSE)
+cdi_categories <- sort(table(cdi$category)/nrow(cdi), decreasing = TRUE)
+write.table(cdi_categories, file =  "Data/cdi_categories.txt", sep = "\t", col.names = c("Category", "Percent of items"), fileEncoding = "utf-8", row.names = FALSE)
 
 #Choose version
 data <- data[data$Wersja=="Z",]
@@ -42,14 +42,14 @@ colnames(responses) <- paste0("item", substring(colnames(responses), 3))
 responses <- responses[, order(as.integer(substring(colnames(responses), 5)))]
 
 #Prepare responses df with demographic variables
-responsesDemo <- merge(data[1:4], responses, by=0)
-responsesDemo$Row.names <- NULL
-responsesDemo <- responsesDemo[order(responsesDemo$KOD), ]
-rownames(responsesDemo) <- NULL
+responses_demo <- merge(data[1:4], responses, by=0)
+responses_demo$Row.names <- NULL
+responses_demo <- responses_demo[order(responses_demo$KOD), ]
+rownames(responses_demo) <- NULL
 
 #Change to English names
-names(responsesDemo)[names(responsesDemo) == 'KOD'] <- 'participant'
-names(responsesDemo)[names(responsesDemo) == 'WiekDni'] <- 'days'
-names(responsesDemo)[names(responsesDemo) == 'WiekMiesiące'] <- 'months'
-names(responsesDemo)[names(responsesDemo) == 'Płeć'] <- 'gender'
-write.csv(responsesDemo, file = "Data/responsesDemo.csv", fileEncoding = "utf-8", row.names = F)
+names(responses_demo)[names(responses_demo) == 'KOD'] <- 'participant'
+names(responses_demo)[names(responses_demo) == 'WiekDni'] <- 'days'
+names(responses_demo)[names(responses_demo) == 'WiekMiesiące'] <- 'months'
+names(responses_demo)[names(responses_demo) == 'Płeć'] <- 'gender'
+write.csv(responses_demo, file = "Data/responses_demo.csv", fileEncoding = "utf-8", row.names = F)

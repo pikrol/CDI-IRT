@@ -1,5 +1,5 @@
 #Function for saving ggplots
-plotSave <- function(plot, 
+plot_save<- function(plot, 
                       width = 853, 
                       height = 480, 
                       text.factor = 1, 

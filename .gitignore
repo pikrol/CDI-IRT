@@ -1,7 +1,8 @@
 Data/*
 Results/*
 .Rhistory
-todo.txt
+TODO.txt
 .DS_Store
 .Rproj.user
 *.Rproj
+.RData

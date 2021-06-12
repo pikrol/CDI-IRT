@@ -1,0 +1,87 @@
+---
+title: "ltm vs. mirt"
+author: "Piotr Król"
+date: "12 06 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Goal of this report is to compare parameters estimates from *ltm* and *mirt* package.
+
+```{r libraries, message=FALSE, warning=FALSE}
+library(ltm)
+library(mirt)
+```
+
+Let's start with simple 5x5 matrix of responses:
+
+```{r matrix 1 creation}
+responses <- rbind(
+  c(1,0,1,0,1),
+  c(0,1,0,1,0),
+  c(1,1,1,1,1),
+  c(0,0,0,0,0),
+  c(1,1,0,0,1)
+)
+colnames(responses) <- paste0("item", c(1:5)) #names are needed for mirt
+responses
+```
+
+Create *ltm* model:
+
+```{r ltm model creation}
+(ltm_model <- ltm(responses ~ z1, IRT.param = FALSE))
+```
+
+Create *mirt* model:
+
+```{r mirt model creation, results='hide'}
+mirt_model <- mirt(responses, 1)
+```
+
+```{r mirt model print}
+mirt_model
+```
+
+```{r mirt model parameters}
+coef(mirt_model, simplify=TRUE)
+```
+
+So *mirt* failed to converge and observed params are different.
+
+Let's try with another matrix (no floor and ceiling subjects):
+
+```{r matrix 2 creation}
+responses <- rbind(
+  c(1,0,1,0,1),
+  c(0,1,0,1,0),
+  c(1,0,1,0,1),
+  c(0,1,0,1,0),
+  c(1,1,0,0,1)
+)
+colnames(responses) <- paste0("item", c(1:5))
+responses
+```
+
+```{r ltm model 2 creation}
+(ltm_model <- ltm(responses ~ z1, IRT.param = FALSE))
+```
+
+```{r mirt model 2 creation, results = 'hide'}
+(mirt_model <- mirt(responses, 1))
+```
+
+```{r mirt model 2 print}
+mirt_model
+```
+
+
+```{r mirt model 2 parameters}
+coef(mirt_model, simplify=TRUE)
+```
+
+Now *mirt* succesfully converged but params are completely different.
+
