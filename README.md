@@ -3,5 +3,5 @@ Do pliku DataPreparation.R potrzebne są dane będące pod adresem: https://driv
 które wrzucamy do folderu "Data".
 <br/>
 
-**Raport 1 - 12.06.2021 - ltm vs. mirt** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/1_ltm_vs_mirt.html
-**Raport 1 - 12.06.2021 - ltm vs. mirt** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/2_ltm_vs_mirt.html
+**Raport 1 - 12.06.2021 - ltm vs. mirt** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/1_ltm_vs_mirt.html <br/>
+**Raport 2 - 18.06.2021 - ltm vs. mirt** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/2_ltm_vs_mirt.html
