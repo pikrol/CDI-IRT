@@ -1,0 +1,492 @@
+---
+title: "ltm vs. mirt (2)"
+author: "Piotr Król"
+date: "18 06 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Content:
+
+* 5x5 matrix
+* Baker&Kim matrices
+* 50x5 random matrix
+* LSAT7
+* 100X5 random matrix
+* CDI items params
+* CDI CAT simulations
+
+```{r libraries, message=FALSE, warning=FALSE}
+library(ltm)
+library(mirt)
+library(mirtCAT)
+library(parallel) #Speed up simulations
+library(plyr) #For laply
+library(ggpubr)
+```
+
+## 5x5 matrix
+
+Let's take again matrix (second one) from last report:
+
+```{r }
+responses <- rbind(
+  c(1,0,1,0,1),
+  c(0,1,0,1,0),
+  c(1,0,1,0,1),
+  c(0,1,0,1,0),
+  c(1,1,0,0,1)
+)
+colnames(responses) <- paste0("item", c(1:5)) #needded for mirt
+responses
+```
+
+And according to https://groups.google.com/g/mirt-package/c/yLV12DSVj2A check confidence intervals for parameters:
+
+```{r results='hide'}
+mirt_model <- mirt(responses, 1, SE=TRUE)
+```
+
+```{r }
+coef(mirt_model)
+```
+
+They are in fact pretty wide. Let's look at item characteristic curves:
+
+```{r}
+plot(mirt_model, type = 'trace')
+```
+
+They don't look good. Let's look for a "numerically stable" model and check if in such a case parameters would be similar.
+
+## Baker & Kim matrices (ch. 7)
+
+I will take matrix from Baker & Kim (2017, p.116):
+
+```{r}
+N <- 16
+J <- 10
+U <- matrix(c(
+0, 0, 1, 0, 0, 0, 0, 1, 0, 0,
+1, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+1, 1, 1, 0, 1, 0, 1, 0, 0, 0,
+1, 1, 1, 0, 1, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+1, 1, 0, 1, 0, 0, 0, 0, 0, 0,
+1, 0, 0, 0, 0, 1, 1, 1, 0, 0,
+1, 0, 0, 0, 1, 1, 0, 0, 1, 0,
+1, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+1, 0, 0, 0, 1, 0, 0, 0, 1, 0,
+1, 1, 0, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+1, 1, 1, 0, 1, 0, 1, 0, 0, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+1, 1, 0, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+), nrow=N, ncol=J, byrow=TRUE)
+colnames(U) <- paste0("item", c(1:J))
+U
+```
+
+```{r results = 'hide'}
+mirt_model <- mirt(U, 1, SE=TRUE)
+```
+
+```{r}
+mirt_model
+```
+
+*mirt* fails to converge. I have probably to remove ceiling subject (16th):
+
+```{r}
+U <- U[-c(16), ]
+U
+```
+
+```{r results = 'hide'}
+mirt_model <- mirt(U, 1, SE=TRUE)
+```
+
+```{r}
+mirt_model
+```
+
+Still fails to converge but there are no any ceiling or floor items/subjects:
+
+```{r}
+rowSums(U)
+colSums(U)
+```
+
+Let's take second matrix from Baker & Kim (2017, p.117):
+
+```{r}
+N <- 16
+J <- 10
+U2 <- matrix(c(
+0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+0, 1, 1, 1, 0, 0, 0, 1, 0, 0,
+1, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+1, 1, 1, 0, 0, 0, 1, 0, 0, 1,
+1, 1, 1, 1, 0, 0, 0, 0, 0, 1,
+1, 1, 1, 0, 1, 1, 0, 0, 0, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+1, 1, 1, 0, 1, 1, 1, 0, 0, 0,
+0, 1, 1, 1, 1, 1, 0, 1, 1, 0,
+1, 0, 1, 1, 1, 1, 1, 0, 1, 0,
+1, 1, 1, 1, 1, 0, 0, 1, 0, 1,
+1, 1, 1, 1, 1, 0, 1, 1, 1, 0,
+1, 1, 1, 0, 1, 1, 0, 0, 0, 0,
+1, 1, 1, 0, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+), nrow=N, ncol=J, byrow=TRUE)
+colnames(U2) <- paste0("item", c(1:J))
+U2
+```
+
+```{r results = 'hide'}
+mirt_model <- mirt(U2, 1, SE=TRUE)
+```
+
+```{r}
+mirt_model
+```
+
+This also fails to converge. 
+
+## 50x5 random matrix
+
+Let's generate some matrix (50x5) randomly filled with 0s and 1s:
+
+```{r eval=FALSE}
+r = 50
+c = 5
+responses <- matrix(rbinom(r*c,1,0.5),r,c)
+colnames(responses) <- paste0("item", c(1:c))
+```
+
+```{r eval=FALSE, include=FALSE}
+save(responses, file = "Data/responses")
+```
+
+```{r include=FALSE}
+load("Data/responses")
+```
+
+```{r}
+head(responses)
+```
+
+```{r}
+colSums(responses)
+```
+
+```{r}
+rowSums(responses)
+```
+
+And create *mirt* model:
+
+```{r results = 'hide'}
+mirt_model <- mirt(responses, 1, SE=TRUE)
+```
+
+```{r}
+mirt_model
+```
+
+Now succesfully converged. Let's look at parameters:
+
+```{r}
+coef(mirt_model)
+```
+
+```{r}
+plot(mirt_model, type = 'trace')
+```
+
+```{r}
+itemfit(mirt_model)
+```
+
+So it looks like curves are generally fitting (maybe except 1st).
+
+Let's check for *ltm*:
+
+```{r}
+(ltm_model <- ltm(responses ~ z1, IRT.param = FALSE))
+```
+
+```{r}
+plot(ltm_model)
+```
+
+So it looks like parameters are similar but slopes have opposite sign??
+
+## LSAT7
+
+Let's check on LSAT7 dataset:
+
+```{r}
+responses <- expand.table(LSAT7)
+head(responses)
+```
+
+```{r}
+dim(responses)
+```
+
+```{r results = 'hide'}
+mirt_model <- mirt(responses, 1, SE=TRUE)
+```
+
+```{r}
+coef(mirt_model)
+```
+
+```{r}
+plot(mirt_model, type = 'trace')
+```
+
+Nice curves. Let's check *ltm* results:
+
+```{r}
+(ltm_model <- ltm(responses ~ z1, IRT.param = FALSE))
+```
+
+```{r}
+plot(ltm_model)
+```
+
+It looks pretty similar.
+
+## 100x5 matrix
+
+Let's take another random matrix:
+
+```{r eval=FALSE}
+r = 100
+c = 5
+responses <- matrix(rbinom(r*c,1,0.5),r,c)
+colnames(responses) <- paste0("item", c(1:c))
+```
+
+```{r eval=FALSE, include=FALSE}
+save(responses, file = "Data/responses100")
+```
+
+```{r include=FALSE}
+load("Data/responses100")
+```
+
+```{r}
+head(responses)
+```
+
+```{r}
+colSums(responses)
+```
+
+```{r}
+rowSums(responses)
+```
+
+```{r results = 'hide'}
+mirt_model <- mirt(responses, 1, SE=TRUE)
+```
+
+```{r}
+coef(mirt_model)
+```
+
+```{r}
+plot(mirt_model, type = 'trace')
+```
+
+```{r}
+(ltm_model <- ltm(responses ~ z1, IRT.param = FALSE))
+```
+
+```{r}
+plot(ltm_model)
+```
+
+Results from *mirt* and *ltm* are pretty similar.
+
+## CDI data
+
+Load already prepared data:
+
+```{r message=FALSE}
+responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
+cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
+responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
+```
+
+Create models of CDI data:
+
+```{r eval = FALSE}
+ltm_model <- ltm(responses ~ z1, IRT.param = FALSE)
+mirt_model <- mirt(responses, 1, SE = TRUE)
+```
+
+```{r include=FALSE}
+load("Data/ltm_model")
+load("Data/mirt_model")
+```
+
+Look at some global fit statistics both from *ltm* and *mirt*
+
+```{r}
+mirt_model
+```
+
+```{r }
+ltm_summary <- summary(ltm_model)
+ltm_summary$logLik
+ltm_summary$AIC
+ltm_summary$BIC
+```
+
+Let's look at parameters estimates from both models:
+
+```{r,  fig.width=15}
+mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
+ltm_params <- as.data.frame(coef(ltm_model))
+colnames(ltm_params) <- c("d", "z1")
+
+mirt_params <- cbind(mirt_params, cdi)
+ltm_params <- cbind(ltm_params, cdi)
+
+mirt_plot <- ggplot(mirt_params, aes(d, a1, colour = category)) +
+  geom_point() +
+  xlab("Intercept") +
+  ylab("Slope") +
+  labs(title = "mirt") + 
+  theme(legend.position = "none")
+
+ltm_plot <- ggplot(ltm_params, aes(d, z1, colour = category)) +
+  geom_point() +
+  xlab("Intercept") +
+  ylab("Slope") + 
+  labs(title = "ltm") +
+  theme(legend.position = "none")
+
+ggarrange(mirt_plot, ltm_plot)
+```
+
+So in proper scale they look pretty similar. General order is preserved (points are coloured by categories).
+
+Let's set the same axes for both plots:
+
+```{r fig.width=15}
+mirt_plot <- ggplot(mirt_params, aes(d, a1, colour = category)) +
+  geom_point() +
+  xlab("Intercept") +
+  ylab("Slope") +
+  labs(title = "mirt") + 
+  theme(legend.position = "none") +
+  xlim(-5,5) + 
+  ylim(0,5)
+
+ltm_plot <- ggplot(ltm_params, aes(d, z1, colour = category)) +
+  geom_point() +
+  xlab("Intercept") +
+  ylab("Slope") + 
+  labs(title = "ltm") +
+  theme(legend.position = "none") +
+  xlim(-5,5) + 
+  ylim(0,5)
+
+ggarrange(mirt_plot, ltm_plot)
+```
+
+Now it's visible that *ltm* params are somehow squished.
+
+## Simulations
+
+Let's check how simulations will behave with *mirt* and *ltm* params.
+
+### 10 items
+
+```{r}
+cl <- makeCluster(detectCores()) #Speeds up simulation
+mirt_obj <- generate.mirt_object(mirt_params[1:2], '2PL') 
+ltm_obj <- generate.mirt_object(data.frame(a1 = ltm_params$z1, d = ltm_params$d), '2PL')
+
+items_nr <- 10
+design <- list(min_items = items_nr, max_items = items_nr)
+results_mirt <- mirtCAT(mo = mirt_obj, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = design)
+results_ltm <- mirtCAT(mo = ltm_obj, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = design)
+```
+
+```{r fig.width=12}
+thetas <- laply(results_mirt, function(x) x$thetas)
+SE_thetas <- laply(results_mirt, function(x) x$SE_thetas)
+plot_mirt <- ggscatter(data.frame(thetas, SE_thetas), y = "SE_thetas", x = "thetas", 
+                  xlab = "Theta", ylab = "SE", title = paste0("mirt params - average SE: ", round(mean(SE_thetas),2)))
+
+thetas <- laply(results_ltm, function(x) x$thetas)
+SE_thetas <- laply(results_ltm, function(x) x$SE_thetas)
+plot_ltm<- ggscatter(data.frame(thetas, SE_thetas), y = "SE_thetas", x = "thetas",
+                  xlab = "Theta", ylab = "SE", title = paste0("ltm params - average SE: ", round(mean(SE_thetas),2)))
+
+ggarrange(plot_mirt, plot_ltm)
+```
+
+```{r fig.width=12}
+raw_scores <- rowSums(responses)
+
+thetas <- laply(results_mirt, function(x) x$thetas)
+SE_thetas <- laply(results_mirt, function(x) x$SE_thetas)
+plot_mirt <- ggscatter(data.frame(thetas, raw_scores), y = "raw_scores", x = "thetas",
+          xlab = "Theta", ylab = "Raw score", title = "mirt")
+
+thetas <- laply(results_ltm, function(x) x$thetas)
+SE_thetas <- laply(results_ltm, function(x) x$SE_thetas)
+plot_ltm <- ggscatter(data.frame(thetas, raw_scores), y = "raw_scores", x = "thetas",
+          xlab = "Theta", ylab = "Raw score", title = "ltm")
+
+ggarrange(plot_mirt, plot_ltm)
+```
+
+## 20 items
+
+```{r}
+items_nr <- 20
+design <- list(min_items = items_nr, max_items = items_nr)
+results_mirt <- mirtCAT(mo = mirt_obj, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = design)
+results_ltm <- mirtCAT(mo = ltm_obj, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = design)
+```
+
+```{r fig.width=12}
+thetas <- laply(results_mirt, function(x) x$thetas)
+SE_thetas <- laply(results_mirt, function(x) x$SE_thetas)
+plot_mirt <- ggscatter(data.frame(thetas, SE_thetas), y = "SE_thetas", x = "thetas", 
+                  xlab = "Theta", ylab = "SE", title = paste0("mirt params - average SE: ", round(mean(SE_thetas),2)))
+
+thetas <- laply(results_ltm, function(x) x$thetas)
+SE_thetas <- laply(results_ltm, function(x) x$SE_thetas)
+plot_ltm<- ggscatter(data.frame(thetas, SE_thetas), y = "SE_thetas", x = "thetas",
+                  xlab = "Theta", ylab = "SE", title = paste0("ltm params - average SE: ", round(mean(SE_thetas),2)))
+
+ggarrange(plot_mirt, plot_ltm)
+```
+
+```{r fig.width=12}
+thetas <- laply(results_mirt, function(x) x$thetas)
+SE_thetas <- laply(results_mirt, function(x) x$SE_thetas)
+plot_mirt <- ggscatter(data.frame(thetas, raw_scores), y = "raw_scores", x = "thetas",
+          xlab = "Theta", ylab = "Raw score", title = "mirt")
+
+thetas <- laply(results_ltm, function(x) x$thetas)
+SE_thetas <- laply(results_ltm, function(x) x$SE_thetas)
+plot_ltm <- ggscatter(data.frame(thetas, raw_scores), y = "raw_scores", x = "thetas",
+          xlab = "Theta", ylab = "Raw score", title = "ltm")
+
+ggarrange(plot_mirt, plot_ltm)
+```

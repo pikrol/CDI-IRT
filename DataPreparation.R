@@ -19,7 +19,7 @@ cdi <- unique(cdi)
 cdi <- cdi[order(cdi$Numer),]
 row.names(cdi) <- NULL
 colnames(cdi) <- c("category", "number.ws", "number.wg", "position")
-# write.csv(cdi, file = "Data/cdi.csv", fileEncoding = "utf-8", row.names = F)
+write.csv(cdi, file = "Data/cdi.csv", fileEncoding = "utf-8", row.names = F)
 
 #Create table with cdi categories and percents of items
 cdi_categories <- sort(table(cdi$category)/nrow(cdi), decreasing = TRUE)
