@@ -1,0 +1,108 @@
+---
+title: "Quadratures"
+author: "Piotr Król"
+date: "23 06 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries, message=FALSE, warning=FALSE}
+library(ltm)
+library(mirt)
+```
+
+```{r message=FALSE}
+responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
+responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
+```
+
+## *ltm*
+
+### *ltm* with 61 quadrature points
+
+```{r eval=FALSE}
+ltm_model <- ltm(responses ~ z1, IRT.param = FALSE, control = list(GHk = 61))
+```
+
+```{r eval=FALSE, include=FALSE}
+save(ltm_model, file = "Data/ltm_model_61GHk")
+```
+
+```{r include=FALSE}
+load("Data/ltm_model_61GHk")
+```
+
+```{r}
+summary(ltm_model)$logLik
+```
+
+```{r}
+ltm_params <- as.data.frame(coef(ltm_model))
+head(ltm_params)
+```
+
+### *ltm* with deafult 15 quadrature points
+
+```{r eval=FALSE}
+ltm_model <- ltm(responses ~ z1, IRT.param = FALSE)
+```
+
+```{r include=FALSE}
+load("Data/ltm_model")
+```
+
+```{r}
+summary(ltm_model)$logLik
+```
+
+```{r}
+ltm_params <- as.data.frame(coef(ltm_model))
+head(ltm_params)
+```
+
+## *mirt*
+
+### *mirt* with 15 quadrature points
+
+```{r eval=FALSE, results = 'hide'}
+mirt_model <- mirt(responses, 1, SE=TRUE, quadpts = 15)
+```
+
+```{r eval=FALSE, include=FALSE}
+save(mirt_model, file = "Data/mirt_model_15GHk")
+```
+
+```{r include=FALSE}
+load("Data/mirt_model_15GHk")
+```
+
+```{r}
+mirt_model
+```
+
+```{r}
+mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
+head(mirt_params)
+```
+
+### *mirt* with default 61 quadrature points
+
+```{r eval=FALSE, results = 'hide'}
+mirt_model <- mirt(responses, 1, SE=TRUE)
+```
+
+```{r include=FALSE}
+load("Data/mirt_model")
+```
+
+```{r}
+mirt_model
+```
+
+```{r}
+mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
+head(mirt_params)
+```
