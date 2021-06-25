@@ -6,12 +6,14 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 ```
 
 ```{r libraries, message=FALSE, warning=FALSE}
 library(ltm)
 library(mirt)
+library(ggpubr)
+library(beepr)
 ```
 
 ```{r message=FALSE}
@@ -21,18 +23,14 @@ responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
 
 ## *ltm*
 
-### *ltm* with 61 quadrature points
+### *ltm* with default 15 quadrature points
 
 ```{r eval=FALSE}
-ltm_model <- ltm(responses ~ z1, IRT.param = FALSE, control = list(GHk = 61))
-```
-
-```{r eval=FALSE, include=FALSE}
-save(ltm_model, file = "Data/ltm_model_61GHk")
+ltm_model <- ltm(responses ~ z1, IRT.param = FALSE)
 ```
 
 ```{r include=FALSE}
-load("Data/ltm_model_61GHk")
+load("Data/ltm_model")
 ```
 
 ```{r}
@@ -44,14 +42,18 @@ ltm_params <- as.data.frame(coef(ltm_model))
 head(ltm_params)
 ```
 
-### *ltm* with deafult 15 quadrature points
+### *ltm* with 61 quadrature points
 
 ```{r eval=FALSE}
-ltm_model <- ltm(responses ~ z1, IRT.param = FALSE)
+ltm_model <- ltm(responses ~ z1, IRT.param = FALSE, control = list(GHk = 61))
+```
+
+```{r eval=FALSE, include=FALSE}
+save(ltm_model, file = "Data/ltm_model_61q")
 ```
 
 ```{r include=FALSE}
-load("Data/ltm_model")
+load("Data/ltm_model_61q")
 ```
 
 ```{r}
@@ -72,11 +74,11 @@ mirt_model <- mirt(responses, 1, SE=TRUE, quadpts = 15)
 ```
 
 ```{r eval=FALSE, include=FALSE}
-save(mirt_model, file = "Data/mirt_model_15GHk")
+save(mirt_model, file = "Data/mirt_model_15q")
 ```
 
 ```{r include=FALSE}
-load("Data/mirt_model_15GHk")
+load("Data/mirt_model_15q")
 ```
 
 ```{r}
@@ -106,3 +108,177 @@ mirt_model
 mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
 head(mirt_params)
 ```
+
+### *mirt* with 151 quadrature points
+
+```{r eval=FALSE, results = 'hide'}
+mirt_model <- mirt(responses, 1, SE=TRUE, quadpts = 151)
+beep(sound=8)
+```
+
+```{r eval=FALSE, include=FALSE}
+save(mirt_model, file = "Data/mirt_model_151q")
+```
+
+```{r include=FALSE}
+load("Data/mirt_model_151q")
+```
+
+```{r}
+mirt_model
+```
+
+```{r}
+mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
+head(mirt_params)
+```
+
+### *mirt* with 151 quadrature points and 3000 max number of cycles
+
+```{r eval=FALSE, results = 'hide'}
+mirt_model <- mirt(responses, 1, SE=TRUE, quadpts = 151, technical=list(NCYCLES=3000))
+beep(sound=8)
+```
+
+```{r eval=FALSE, include=FALSE}
+save(mirt_model, file = "Data/mirt_model_151q_3000c")
+```
+
+```{r include=FALSE}
+load("Data/mirt_model_151q_3000c")
+```
+
+```{r}
+mirt_model
+```
+
+```{r}
+mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
+head(mirt_params)
+```
+
+### *mirt* with 301 quadrature points
+
+```{r eval=FALSE, results = 'hide'}
+mirt_model <- mirt(responses, 1, SE=TRUE, quadpts = 301)
+```
+
+```{r eval=FALSE, include=FALSE}
+save(mirt_model, file = "Data/mirt_model_301q")
+```
+
+```{r include=FALSE}
+load("Data/mirt_model_301q")
+```
+
+```{r}
+mirt_model
+```
+
+```{r}
+mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
+head(mirt_params)
+```
+
+### *mirt* with 301 quadrature points and 3000 max number of cycles
+
+```{r eval=FALSE, results = 'hide'}
+mirt_model <- mirt(responses, 1, SE=TRUE, quadpts = 301, technical=list(NCYCLES=3000))
+```
+
+```{r eval=FALSE, include=FALSE}
+save(mirt_model, file = "Data/mirt_model_301q_3000c")
+```
+
+```{r include=FALSE}
+load("Data/mirt_model_301q_3000c")
+```
+
+```{r}
+mirt_model
+```
+
+```{r}
+mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
+head(mirt_params)
+```
+
+So clearly it's worth to increase maximum number of cycles.
+
+### *mirt* with 451 quadrature points
+
+```{r eval=FALSE, results = 'hide'}
+mirt_model <- mirt(responses, 1, SE=TRUE, quadpts = 451, technical=list(NCYCLES=3000))
+```
+
+```{r eval=FALSE, include=FALSE}
+save(mirt_model, file = "Data/mirt_model_451q")
+```
+
+```{r include=FALSE}
+load("Data/mirt_model_451q")
+```
+
+```{r}
+mirt_model
+```
+
+```{r}
+mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
+head(mirt_params)
+```
+
+### *mirt* with 601 quadrature points
+
+```{r eval=FALSE, results = 'hide'}
+mirt_model <- mirt(responses, 1, SE=TRUE, quadpts = 601, technical=list(NCYCLES=10000))
+```
+
+```{r eval=FALSE, include=FALSE}
+save(mirt_model, file = "Data/mirt_model_601q")
+```
+
+```{r include=FALSE}
+load("Data/mirt_model_601q")
+```
+
+```{r}
+mirt_model
+```
+
+```{r}
+mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
+head(mirt_params)
+```
+
+## Summary
+
+Let's check how logLik and parameters for 1st item were changing with number of quadratures for *mirt* package:
+
+```{r}
+df <- data.frame(
+  quadratures = c(15, 61, 151, 301, 451, 601),
+  logLik = c(-472591.2, -463630.5, -462896.9, -462860.8, -462860.681, -462860.656),
+  a1_1 = c(0.4435, 0.9245, 1.1699, 1.2304, 1.2310, 1.2312),
+  d_1 = c(0.4609, 0.3187, 0.2477, 0.4003, 0.4041, 0.4059)
+)
+df
+```
+
+Some stabilization can be seen from ~301 quadratures
+
+```{r}
+ggplot(df, aes(quadratures, logLik)) +
+  geom_point() +
+  geom_line()
+```
+
+```{r}
+ggplot(df, aes(quadratures)) +
+  geom_line(aes(y = a1_1, colour = "Slope")) + 
+  geom_line(aes(y = d_1, colour = "Intercept")) +
+  xlab("Quadratures") +
+  ylab("Value of parameter") +
+  labs(title = "Parameters for Item 1")
+```
+
