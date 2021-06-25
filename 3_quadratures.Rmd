@@ -1,13 +1,31 @@
 ---
 title: "Quadratures"
 author: "Piotr Król"
-date: "23 06 2021"
+date: "25 06 2021"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 ```
+
+Content:
+
+* ltm
+  + 15 quadratures
+  + 61 quadratures
+* mirt
+  + 15 quadratures
+  + 61 quadratures
+  + 151 quadratures
+  + 151 quadratures with increased max number of cycles
+  + 301 quadratures
+  + 301 quadratures with increased max number of cycles
+  + 451 quadratures
+  + 601 quadratures
+* summary
+  + differences in mirt's logLik wrt quadratures
+  + differences in mirt's 1st item param wrt quadratures
 
 ```{r libraries, message=FALSE, warning=FALSE}
 library(ltm)
