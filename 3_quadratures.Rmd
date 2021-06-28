@@ -1,7 +1,7 @@
 ---
 title: "Quadratures"
 author: "Piotr Król"
-date: "25 06 2021"
+date: "28 06 2021"
 output: html_document
 ---
 
@@ -24,13 +24,18 @@ Content:
   + 301 quadratures with increased max number of cycles
   + 451 quadratures
   + 601 quadratures
-* summary
+* summary mirt
   + differences in mirt's logLik wrt quadratures
   + differences in mirt's 1st item param wrt quadratures
+* TAM
+  + default settings (quasi Monte Carlo integration)
+  + "ordinary" stochastic integration with 301 snodes
+* summary tables
 
 ```{r libraries, message=FALSE, warning=FALSE}
 library(ltm)
 library(mirt)
+library(TAM)
 library(ggpubr)
 library(beepr)
 ```
@@ -296,7 +301,7 @@ mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
 head(mirt_params)
 ```
 
-## Summary
+## Summary *mirt*
 
 Let's check how logLik and parameters for 1st item were changing with number of quadratures for *mirt* package:
 
@@ -326,3 +331,85 @@ ggplot(df, aes(quadratures)) +
   ylab("Value of parameter") +
   labs(title = "Parameters for Item 1")
 ```
+
+## TAM default settings (quasi Monte Carlo integration)
+
+```{r eval=FALSE, results='hide'}
+tam_model <- tam.mml.2pl(responses, irtmodel="2PL")
+```
+
+```{r eval=FALSE, include=FALSE}
+save(tam_model, file="Data/tam_model")
+```
+
+```{r include=FALSE}
+load("Data/tam_model")
+```
+
+```{r}
+tam_model
+```
+
+```{r}
+tam_params<-data.frame(a1=tam_model$item[,"B.Cat1.Dim1"], d=tam_model$xsi$xsi)
+head(tam_params)
+```
+
+Results are quite similar to ltm's default settings. Difficulty's sign just has to be changed for some reason (https://www.researchgate.net/publication/328968604_Evaluation_of_R_Packages_with_IRT_2PL_Model)
+
+## TAM "ordinary" stochastic integration (301 snodes)
+
+I believe this snodes ("number of simulated θ nodes for stochastic integration", https://cran.r-project.org/web/packages/TAM/TAM.pdf, p.115) is some equivalent for quadratures.
+
+```{r eval=FALSE, results='hide'}
+tam_model <- tam.mml.2pl(responses, irtmodel="2PL", control=list(snodes = 301, QMC=FALSE))
+```
+
+```{r eval=FALSE, include=FALSE}
+save(tam_model, file="Data/tam_model_301q")
+```
+
+```{r include=FALSE}
+load("Data/tam_model_301q")
+```
+
+```{r}
+tam_model
+```
+
+```{r}
+tam_params<-data.frame(a1=tam_model$item[,"B.Cat1.Dim1"], d=tam_model$xsi$xsi)
+head(tam_params)
+```
+
+Thus it has better Log- (https://medium.com/@analyttica/log-likelihood-analyttica-function-series-cb059e0d379) and params qre not so far from *mirt* params (with increased number of quadtps).
+
+## Summmary
+
+### mirt
+
+| Quadratures | LogLik      | a1      | d      |
+|-------------|-------------|---------|--------|
+| 15          | -472591.2   | 0.4435  | 0.4609 |
+| 61          | -463630.5   | 0.9245  | 0.3187 |
+| 151         | -462896.9   | 1.1699  | 0.2477 |
+| 301         | -462860.8   | 1.23040 | 0.4003 |
+| 451         | -462860.681 | 1.2310  | 0.4041 |
+| 601         | -462860.656 | 1.2312  | 0.4059 |
+
+a1 & d are params for 1st item
+
+## ltm
+
+| Quadratures | LogLik    | a1     | d      |
+|-------------|-----------|--------|--------|
+| 15          | -470030.7 | 0.5063 | 0.5008 |
+| 61          | -466025.8 | 0.6275 | 0.3815 |
+| 101         | -464945.3 | 0.6854 | 0.4937 |
+
+## TAM
+
+| Quadratures                     | LogLik    | a1     | d       |
+|---------------------------------|-----------|--------|---------|
+| default Monte Carlo integration | -468847.2 | 0.5170 | -0.443  |
+| 301 snodes                      | -462871.7 | 1.2074 | -0.2569 |
