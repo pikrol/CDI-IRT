@@ -14,6 +14,7 @@ Content:
 * ltm
   + 15 quadratures
   + 61 quadratures
+  + 101 quadratures
 * mirt
   + 15 quadratures
   + 61 quadratures
@@ -72,6 +73,32 @@ save(ltm_model, file = "Data/ltm_model_61q")
 
 ```{r include=FALSE}
 load("Data/ltm_model_61q")
+```
+
+```{r}
+summary(ltm_model)$logLik
+```
+
+```{r}
+ltm_params <- as.data.frame(coef(ltm_model))
+head(ltm_params)
+```
+
+### *ltm* with 101 quadrature points
+
+Higher number (111) is not possible. It gives error 'Błąd w poleceniu 'gh[[n]]':indeks jest poza granicami'
+
+```{r eval=FALSE}
+# I also increased number of iterations to make it the same as mirt had with 301 quadratures
+ltm_model <- ltm(responses ~ z1, IRT.param = FALSE, control = list(iter.em = 2084, GHk = 101))
+```
+
+```{r eval=FALSE, include=FALSE}
+save(ltm_model, file = "Data/ltm_model_101q")
+```
+
+```{r include=FALSE}
+load("Data/ltm_model_101q")
 ```
 
 ```{r}
@@ -299,4 +326,3 @@ ggplot(df, aes(quadratures)) +
   ylab("Value of parameter") +
   labs(title = "Parameters for Item 1")
 ```
-

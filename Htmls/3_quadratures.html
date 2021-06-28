@@ -385,6 +385,7 @@ summary {
 <ul>
 <li>15 quadratures</li>
 <li>61 quadratures</li>
+<li>101 quadratures</li>
 </ul></li>
 <li>mirt
 <ul>
@@ -440,6 +441,23 @@ head(ltm_params)</code></pre>
 ## item4   1.4706989 0.7844162
 ## item5   2.7759578 0.7517544
 ## item6   1.6228791 0.6774569</code></pre>
+</div>
+<div id="ltm-with-101-quadrature-points" class="section level3">
+<h3><em>ltm</em> with 101 quadrature points</h3>
+<p>Higher number (111) is not possible. It gives error ‘Błąd w poleceniu ’gh[[n]]’:indeks jest poza granicami’</p>
+<pre class="r"><code># I also increased number of iterations to make it the same as mirt had with 301 quadratures
+ltm_model &lt;- ltm(responses ~ z1, IRT.param = FALSE, control = list(iter.em = 2084, GHk = 101))</code></pre>
+<pre class="r"><code>summary(ltm_model)$logLik</code></pre>
+<pre><code>## [1] -464945.3</code></pre>
+<pre class="r"><code>ltm_params &lt;- as.data.frame(coef(ltm_model))
+head(ltm_params)</code></pre>
+<pre><code>##       (Intercept)        z1
+## item1   0.4936673 0.6853855
+## item2   3.0198061 0.7961443
+## item3   2.2226354 0.7026859
+## item4   1.6115438 0.8575204
+## item5   2.9063334 0.8162588
+## item6   1.7448760 0.7397492</code></pre>
 </div>
 </div>
 <div id="mirt" class="section level2">
