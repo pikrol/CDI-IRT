@@ -406,7 +406,8 @@ summary {
 <li>TAM
 <ul>
 <li>default settings (quasi Monte Carlo integration)</li>
-<li>“ordinary” stochastic integration with 301 snodes</li>
+<li>201 snodes (“ordinary” stochastic integration)</li>
+<li>301 snodes</li>
 <li>451 snodes</li>
 </ul></li>
 <li>summary tables</li>
@@ -819,9 +820,36 @@ head(tam_params)</code></pre>
 ## 6 0.5651001 -1.6952350</code></pre>
 <p>Results are quite similar to ltm’s default settings. Difficulty’s sign just has to be changed for some reason (<a href="https://www.researchgate.net/publication/328968604_Evaluation_of_R_Packages_with_IRT_2PL_Model" class="uri">https://www.researchgate.net/publication/328968604_Evaluation_of_R_Packages_with_IRT_2PL_Model</a>)</p>
 </div>
-<div id="tam-ordinary-stochastic-integration-301-snodes" class="section level2">
-<h2>TAM “ordinary” stochastic integration (301 snodes)</h2>
+<div id="tam-201-snodes---ordinary-stochastic-integration" class="section level2">
+<h2>TAM 201 snodes - “ordinary” stochastic integration</h2>
 <p>I believe this snodes (“number of simulated θ nodes for stochastic integration”, <a href="https://cran.r-project.org/web/packages/TAM/TAM.pdf" class="uri">https://cran.r-project.org/web/packages/TAM/TAM.pdf</a>, p.115) is some equivalent for quadratures.</p>
+<pre class="r"><code>tam_model &lt;- tam.mml.2pl(responses, irtmodel=&quot;2PL&quot;, control=list(snodes = 201, QMC=FALSE)</code></pre>
+<pre class="r"><code>tam_model</code></pre>
+<pre><code>## TAM 3.7-16 (2021-06-24 14:31:37) 
+## 
+## Call:
+## tam.mml.2pl(resp = responses, irtmodel = &quot;2PL&quot;, control = list(snodes = 201, 
+##     QMC = FALSE, maxiter = 3000))
+## 
+## Multidimensional Item Response Model in TAM 
+## 
+## Deviance= 926030.5  | Log Likelihood= -463015.3 
+## Number of persons used= 2297 
+## Number of estimated parameters= 1340 
+## AIC= 928711 
+## BIC= 936401</code></pre>
+<pre class="r"><code>tam_params&lt;-data.frame(a1=tam_model$item[,&quot;B.Cat1.Dim1&quot;], d=tam_model$xsi$xsi)
+head(tam_params)</code></pre>
+<pre><code>##         a1          d
+## 1 1.290692 -0.4361735
+## 2 1.451109 -2.9353086
+## 3 1.301972 -2.1602121
+## 4 1.603556 -1.5350817
+## 5 1.488432 -2.8190486
+## 6 1.372905 -1.6772244</code></pre>
+</div>
+<div id="tam-301-snodes" class="section level2">
+<h2>TAM 301 snodes</h2>
 <pre class="r"><code>tam_model &lt;- tam.mml.2pl(responses, irtmodel=&quot;2PL&quot;, control=list(snodes = 301, QMC=FALSE))</code></pre>
 <pre class="r"><code>tam_model</code></pre>
 <pre><code>## TAM 3.7-16 (2021-06-24 14:31:37) 
@@ -850,7 +878,7 @@ head(tam_params)</code></pre>
 </div>
 <div id="tam-451-snodes" class="section level2">
 <h2>TAM 451 snodes</h2>
-<pre class="r"><code>tam_model &lt;- tam.mml.2pl(responses, irtmodel=&quot;2PL&quot;, control=list(snodes = 451, QMC=FALSE, maxiter=3000))</code></pre>
+<pre class="r"><code>tam_model &lt;- tam.mml.2pl(responses, irtmodel=&quot;2PL&quot;, control=list(snodes = 451, QMC=FALSE))</code></pre>
 <pre class="r"><code>tam_model</code></pre>
 <pre><code>## TAM 3.7-16 (2021-06-24 14:31:37) 
 ## 
@@ -978,15 +1006,21 @@ head(tam_params)</code></pre>
 <td>default Monte Carlo integration</td>
 <td>-468847.2</td>
 <td>0.5170</td>
-<td>-0.443</td>
+<td>-0.4362</td>
 </tr>
 <tr class="even">
+<td>201 snodes</td>
+<td>-463015.3</td>
+<td>1.2907</td>
+<td>-0.2569</td>
+</tr>
+<tr class="odd">
 <td>301 snodes</td>
 <td>-462871.7</td>
 <td>1.2074</td>
 <td>-0.2569</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>451 snodes</td>
 <td>-462939.2</td>
 <td>1.2941</td>

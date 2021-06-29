@@ -29,7 +29,8 @@ Content:
   + differences in mirt's 1st item param wrt quadratures
 * TAM
   + default settings (quasi Monte Carlo integration)
-  + "ordinary" stochastic integration with 301 snodes
+  + 201 snodes ("ordinary" stochastic integration)
+  + 301 snodes
   + 451 snodes
 * summary tables
 
@@ -358,9 +359,32 @@ head(tam_params)
 
 Results are quite similar to ltm's default settings. Difficulty's sign just has to be changed for some reason (https://www.researchgate.net/publication/328968604_Evaluation_of_R_Packages_with_IRT_2PL_Model)
 
-## TAM "ordinary" stochastic integration (301 snodes)
+## TAM 201 snodes - "ordinary" stochastic integration
 
 I believe this snodes ("number of simulated θ nodes for stochastic integration", https://cran.r-project.org/web/packages/TAM/TAM.pdf, p.115) is some equivalent for quadratures.
+
+```{r eval=FALSE, results='hide'}
+tam_model <- tam.mml.2pl(responses, irtmodel="2PL", control=list(snodes = 201, QMC=FALSE)
+```
+
+```{r eval=FALSE, include=FALSE}
+save(tam_model, file="Data/tam_model_201q")
+```
+
+```{r include=FALSE}
+load("Data/tam_model_201q")
+```
+
+```{r}
+tam_model
+```
+
+```{r}
+tam_params<-data.frame(a1=tam_model$item[,"B.Cat1.Dim1"], d=tam_model$xsi$xsi)
+head(tam_params)
+```
+
+## TAM 301 snodes
 
 ```{r eval=FALSE, results='hide'}
 tam_model <- tam.mml.2pl(responses, irtmodel="2PL", control=list(snodes = 301, QMC=FALSE))
@@ -388,7 +412,7 @@ Thus it has better Log- (https://medium.com/@analyttica/log-likelihood-analyttic
 ## TAM 451 snodes
 
 ```{r eval=FALSE, results='hide'}
-tam_model <- tam.mml.2pl(responses, irtmodel="2PL", control=list(snodes = 451, QMC=FALSE, maxiter=3000))
+tam_model <- tam.mml.2pl(responses, irtmodel="2PL", control=list(snodes = 451, QMC=FALSE))
 ```
 
 ```{r eval=FALSE, include=FALSE}
@@ -435,6 +459,7 @@ a1 & d are params for 1st item
 
 | Quadratures                     | LogLik    | a1     | d       |
 |---------------------------------|-----------|--------|---------|
-| default Monte Carlo integration | -468847.2 | 0.5170 | -0.443  |
+| default Monte Carlo integration | -468847.2 | 0.5170 | -0.4362 |
+| 201 snodes                      | -463015.3 | 1.2907 | -0.2569 |
 | 301 snodes                      | -462871.7 | 1.2074 | -0.2569 |
 | 451 snodes                      | -462939.2 | 1.2941 | -0.5354 |
