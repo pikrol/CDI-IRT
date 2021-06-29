@@ -30,6 +30,7 @@ Content:
 * TAM
   + default settings (quasi Monte Carlo integration)
   + "ordinary" stochastic integration with 301 snodes
+  + 451 snodes
 * summary tables
 
 ```{r libraries, message=FALSE, warning=FALSE}
@@ -384,7 +385,30 @@ head(tam_params)
 
 Thus it has better Log- (https://medium.com/@analyttica/log-likelihood-analyttica-function-series-cb059e0d379) and params qre not so far from *mirt* params (with increased number of quadtps).
 
-## Summmary
+## TAM 451 snodes
+
+```{r eval=FALSE, results='hide'}
+tam_model <- tam.mml.2pl(responses, irtmodel="2PL", control=list(snodes = 451, QMC=FALSE, maxiter=3000))
+```
+
+```{r eval=FALSE, include=FALSE}
+save(tam_model, file="Data/tam_model_451q")
+```
+
+```{r include=FALSE}
+load("Data/tam_model_451q")
+```
+
+```{r}
+tam_model
+```
+
+```{r}
+tam_params<-data.frame(a1=tam_model$item[,"B.Cat1.Dim1"], d=tam_model$xsi$xsi)
+head(tam_params)
+```
+
+## Summary
 
 ### mirt
 
@@ -399,7 +423,7 @@ Thus it has better Log- (https://medium.com/@analyttica/log-likelihood-analyttic
 
 a1 & d are params for 1st item
 
-## ltm
+### ltm
 
 | Quadratures | LogLik    | a1     | d      |
 |-------------|-----------|--------|--------|
@@ -407,9 +431,10 @@ a1 & d are params for 1st item
 | 61          | -466025.8 | 0.6275 | 0.3815 |
 | 101         | -464945.3 | 0.6854 | 0.4937 |
 
-## TAM
+### TAM
 
 | Quadratures                     | LogLik    | a1     | d       |
 |---------------------------------|-----------|--------|---------|
 | default Monte Carlo integration | -468847.2 | 0.5170 | -0.443  |
 | 301 snodes                      | -462871.7 | 1.2074 | -0.2569 |
+| 451 snodes                      | -462939.2 | 1.2941 | -0.5354 |

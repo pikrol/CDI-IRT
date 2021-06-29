@@ -407,6 +407,7 @@ summary {
 <ul>
 <li>default settings (quasi Monte Carlo integration)</li>
 <li>“ordinary” stochastic integration with 301 snodes</li>
+<li>451 snodes</li>
 </ul></li>
 <li>summary tables</li>
 </ul>
@@ -847,8 +848,35 @@ head(tam_params)</code></pre>
 ## 6 1.275193 -1.4840308</code></pre>
 <p>Thus it has better Log- (<a href="https://medium.com/@analyttica/log-likelihood-analyttica-function-series-cb059e0d379" class="uri">https://medium.com/@analyttica/log-likelihood-analyttica-function-series-cb059e0d379</a>) and params qre not so far from <em>mirt</em> params (with increased number of quadtps).</p>
 </div>
-<div id="summmary" class="section level2">
-<h2>Summmary</h2>
+<div id="tam-451-snodes" class="section level2">
+<h2>TAM 451 snodes</h2>
+<pre class="r"><code>tam_model &lt;- tam.mml.2pl(responses, irtmodel=&quot;2PL&quot;, control=list(snodes = 451, QMC=FALSE, maxiter=3000))</code></pre>
+<pre class="r"><code>tam_model</code></pre>
+<pre><code>## TAM 3.7-16 (2021-06-24 14:31:37) 
+## 
+## Call:
+## tam.mml.2pl(resp = responses, irtmodel = &quot;2PL&quot;, control = list(snodes = 451, 
+##     QMC = FALSE, maxiter = 3000))
+## 
+## Multidimensional Item Response Model in TAM 
+## 
+## Deviance= 925878.4  | Log Likelihood= -462939.2 
+## Number of persons used= 2297 
+## Number of estimated parameters= 1340 
+## AIC= 928558 
+## BIC= 936249</code></pre>
+<pre class="r"><code>tam_params&lt;-data.frame(a1=tam_model$item[,&quot;B.Cat1.Dim1&quot;], d=tam_model$xsi$xsi)
+head(tam_params)</code></pre>
+<pre><code>##         a1          d
+## 1 1.294069 -0.5353801
+## 2 1.430887 -3.0339972
+## 3 1.298054 -2.2585032
+## 4 1.605324 -1.6566207
+## 5 1.475829 -2.9259975
+## 6 1.371197 -1.7807375</code></pre>
+</div>
+<div id="summary" class="section level2">
+<h2>Summary</h2>
 <div id="mirt-1" class="section level3">
 <h3>mirt</h3>
 <table>
@@ -901,9 +929,8 @@ head(tam_params)</code></pre>
 </table>
 <p>a1 &amp; d are params for 1st item</p>
 </div>
-</div>
-<div id="ltm-1" class="section level2">
-<h2>ltm</h2>
+<div id="ltm-1" class="section level3">
+<h3>ltm</h3>
 <table>
 <thead>
 <tr class="header">
@@ -935,8 +962,8 @@ head(tam_params)</code></pre>
 </tbody>
 </table>
 </div>
-<div id="tam" class="section level2">
-<h2>TAM</h2>
+<div id="tam" class="section level3">
+<h3>TAM</h3>
 <table>
 <thead>
 <tr class="header">
@@ -959,8 +986,15 @@ head(tam_params)</code></pre>
 <td>1.2074</td>
 <td>-0.2569</td>
 </tr>
+<tr class="odd">
+<td>451 snodes</td>
+<td>-462939.2</td>
+<td>1.2941</td>
+<td>-0.5354</td>
+</tr>
 </tbody>
 </table>
+</div>
 </div>
 
 
