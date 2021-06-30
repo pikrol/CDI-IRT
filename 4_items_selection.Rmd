@@ -12,6 +12,10 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 Content:
 
 * Items used in simulations
+  + SE 0.173 stop criterion
+  + SE 0.173 + 50 max items stop criterion
+* CTT difficulty and discrimination
+
 
 ```{r libraries, message=FALSE, warning=FALSE}
 library(mirt)
@@ -43,7 +47,9 @@ mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
 head(mirt_params)
 ```
 
-Simulate CAT with SE stop criterion:
+## SE 0.173 stop criterion
+
+Simulate CAT with just SE stop criterion:
 
 ```{r eval=FALSE}
 mo <- generate.mirt_object(mirt_params, '2PL')
@@ -161,6 +167,107 @@ ggplot(mirt_params_IRT, aes(b, a, colour = top100)) +
   xlab("Difficulty") +
   ylab("Discrimination") +
   labs(colour = "Top 100") +
+  scale_color_manual(values = c("Black", "Green"))
+```
+
+## SE 0.173 + 50 max items stop criterion
+
+```{r}
+mo <- generate.mirt_object(mirt_params, '2PL')
+design <- list(min_SEM = 0.173, max_items = 50)
+cl <- makeCluster(detectCores())
+sim_results <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = design)
+```
+
+Investigate tests lengths needed to achieve stop criterion (SE<=0.173 + max 50 items):
+
+```{r}
+#Obtain lengths
+tests_lengths <- laply(sim_results, function(x) length(x$items_answered))
+
+#Prepare cuts
+cuts <- cut(tests_lengths, breaks = c(0, 10, 20, 30, 40, 49, 50), labels = c("1 - 10", "11 - 20", "21 - 30", "31 - 40", "41 - 49", "50"), dig.lab = 0)
+df_freq <- as.data.frame(table(cuts))
+
+#Plot distribution
+ggplot(df_freq, aes(x = cuts, y = Freq)) +
+  xlab("Number of items in test") +
+  ylab("Number of tests") +
+  geom_bar(stat = "identity") +
+  ggtitle(paste0("\nAverage test length: ", round(mean(tests_lengths), 2))) +
+  geom_text(aes(label = Freq), vjust = -0.3) + 
+  theme_pubclean() 
+```
+
+```{r}
+#Prepare df with frequencies of usage of items
+frequency_df <- data.frame(number.ws = c(1:nrow(mirt_params)), freq = rep(0, nrow(mirt_params)))
+
+#Update df with number of occurence of given item
+for (p in 1:length(sim_results)){
+  items <- sim_results[[p]]$items_answered
+  for (number.ws in items){
+    frequency_df[frequency_df["number.ws"] == number.ws, "freq"] <- frequency_df[frequency_df["number.ws"] == number.ws, "freq"] + 1
+  }
+}
+
+#Add cdi info about items
+items_usage <- merge(frequency_df, cdi, by="number.ws")
+row.names(items_usage) <- NULL
+
+#Calculate frequency by percents and order by it
+items_usage$freq <- items_usage$freq / length(sim_results)
+items_usage <- items_usage[order(items_usage$freq, decreasing = T), ]
+head(items_usage)
+```
+
+```{r}
+#Prepare cuts
+cuts <- cut(items_usage$freq, breaks = c(0, 0.05, 0.1, 0.15, 0.2, 0.3, 1), labels = c("0 - 5%", "5 - 10%", "10 - 15%", "15 - 20%", "20 - 30%", "30 - 100%"), dig.lab = 0)
+df_freq <- as.data.frame(table(cuts))
+
+#Plot distribution
+ggplot(df_freq, aes(x = cuts, y = Freq)) +
+  xlab("Frequency of usage") +
+  ylab("Number of items") +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = Freq), vjust = -0.3) + 
+  ggtitle(paste0("Number of used items: ", length(which(items_usage$freq > 0)))) +
+  theme_pubclean() 
+```
+
+Parameters of used 146 items:
+
+```{r fig.width=12}
+best_items <- items_usage[1:length(which(items_usage$freq > 0)), ]
+
+#Prepare df with only used items with IRT params
+best_items_ids <- paste0("item", best_items$number.ws)
+mirt_params_IRT <- as.data.frame(coef(mirt_model, simplify = TRUE, IRTpars = TRUE)$items)[1:2]
+mirt_params_IRT_best <- mirt_params_IRT[best_items_ids, ]
+mirt_params_IRT_best <- cbind(mirt_params_IRT_best, best_items)
+
+#Create plot
+ggplot(mirt_params_IRT_best, aes(b, a, colour = category)) +
+  geom_point() +
+  xlab("Difficulty") +
+  ylab("Discrimination")
+```
+
+Parameters of used 146 w.r.t. all items:
+
+```{r fig.width=12}
+#Prepare df with all params
+mirt_params_IRT <- cbind(mirt_params_IRT, cdi)
+mirt_params_IRT$top100 <- FALSE
+mirt_params_IRT[best_items_ids, "top100"] <- TRUE
+
+#Create plot
+ggplot(mirt_params_IRT, aes(b, a, colour = top100)) +
+  geom_point() +
+  xlab("Difficulty") +
+  ylab("Discrimination") +
+  labs(colour = "In used 146") +
   scale_color_manual(values = c("Black", "Green"))
 ```
 
