@@ -5,4 +5,5 @@ które wrzucamy do folderu "Data".
 
 **Raport 1 - 12.06.2021 - ltm vs. mirt** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/1_ltm_vs_mirt.html <br/>
 **Raport 2 - 18.06.2021 - ltm vs. mirt** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/2_ltm_vs_mirt.html <br/>
-**Raport 3 - 25.06.2021 - quadratures** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/3_quadratures.html
+**Raport 3 - 28.06.2021 - quadratures** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/3_quadratures.html <br/>
+**Raport 4 - 30.06.2021 - Items selection** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/4_items_selection.html

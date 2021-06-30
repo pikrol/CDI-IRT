@@ -1,0 +1,165 @@
+---
+title: "Items selection"
+author: "Piotr Król"
+date: "29 06 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+Content:
+
+* Items used in simulations
+
+```{r libraries, message=FALSE, warning=FALSE}
+library(mirt)
+library(mirtCAT)
+library(parallel) #Speeds up simulations (many in parallel)
+library(plyr) #For laply
+library(ggpubr) #For making plots
+```
+
+Load already prepared responses & cdi content:
+
+```{r message=FALSE}
+responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
+responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
+cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
+```
+
+# Items used in simulations
+
+Load best *mirt* model with 601 quadratures (the highest log-likelihood ever obtained):
+
+```{r}
+load("Data/mirt_model_601q")
+mirt_model
+```
+
+```{r}
+mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
+head(mirt_params)
+```
+
+Simulate CAT with SE stop criterion:
+
+```{r eval=FALSE}
+mo <- generate.mirt_object(mirt_params, '2PL')
+design <- list(min_SEM = 0.173) #0.173 corresponds to reliability of 0.97 (which is Polish CDI:WS words reliability)
+cl <- makeCluster(detectCores()) #Speeds up simulations (many in paralell)
+sim_results <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = design)
+```
+
+```{r include=FALSE}
+load("Data/sim_results")
+```
+
+Investigate tests lengths needed to achieve stop criterion (SE<=0.173):
+
+```{r}
+#Obtain lengths
+tests_lengths <- laply(sim_results, function(x) length(x$items_answered))
+
+#Prepare cuts
+cuts <- cut(tests_lengths, breaks = c(0, 10, 20, 50, 100, 200, 669, 670), labels = c("1 - 10", "11 - 20", "21 - 50", "51 - 100", "101 - 200", "201 - 669", "670"), dig.lab = 0)
+df_freq <- as.data.frame(table(cuts))
+
+#Plot distribution
+ggplot(df_freq, aes(x = cuts, y = Freq)) +
+  xlab("Number of items in test") +
+  ylab("Number of tests") +
+  geom_bar(stat = "identity") +
+  ggtitle(paste0("\nAverage test length: ", round(mean(tests_lengths), 2))) +
+  geom_text(aes(label = Freq), vjust = -0.3) + 
+  theme_pubclean() 
+```
+
+Calculate frequency of occurence of particular items:
+
+```{r}
+#Prepare df with frequencies of usage of items
+frequency_df <- data.frame(number.ws = c(1:nrow(mirt_params)), freq = rep(0, nrow(mirt_params)))
+
+#Update df with number of occurence of given item
+for (p in 1:length(sim_results)){
+  items <- sim_results[[p]]$items_answered
+  for (number.ws in items){
+    frequency_df[frequency_df["number.ws"] == number.ws, "freq"] <- frequency_df[frequency_df["number.ws"] == number.ws, "freq"] + 1
+  }
+}
+head(frequency_df)
+```
+
+Add cdi info about items
+
+```{r}
+items_usage <- merge(frequency_df, cdi, by="number.ws")
+row.names(items_usage) <- NULL
+head(items_usage)
+```
+
+Calculate frequency in percents and order by it
+
+```{r}
+items_usage$freq <- items_usage$freq / length(sim_results)
+items_usage <- items_usage[order(items_usage$freq, decreasing = T), ]
+head(items_usage)
+```
+
+Investigate frequency intervals:
+
+```{r}
+#Prepare cuts
+cuts <- cut(items_usage$freq, breaks = c(0, 0.06, 0.07, 0.08, 0.1, 0.2,  1), labels = c("0 - 6%", "6 - 7%", "7 - 8%", "8 - 10%", "10 - 20%", "20-100%"), dig.lab = 0)
+df_freq <- as.data.frame(table(cuts))
+
+#Plot distribution
+ggplot(df_freq, aes(x = cuts, y = Freq)) +
+  xlab("Frequency of usage") +
+  ylab("Number of items") +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = Freq), vjust = -0.3) + 
+  theme_pubclean() 
+```
+
+Select top 100 items and check their category belonging:
+
+```{r}
+best_items <- items_usage[1:100, ]
+table(best_items$category)
+```
+
+So there are generally different categories. Let's check what are the parameters (IRT parametrization) of top 100 items:
+
+```{r fig.width=12}
+#Prepare df with only best items with IRT params
+best_items_ids <- paste0("item", best_items$number.ws)
+mirt_params_IRT <- as.data.frame(coef(mirt_model, simplify = TRUE, IRTpars = TRUE)$items)[1:2]
+mirt_params_IRT_best <- mirt_params_IRT[best_items_ids, ]
+mirt_params_IRT_best <- cbind(mirt_params_IRT_best, best_items)
+
+#Create plot
+ggplot(mirt_params_IRT_best, aes(b, a, colour = category)) +
+  geom_point() +
+  xlab("Difficulty") +
+  ylab("Discrimination")
+```
+
+See what are parameters of the best items w.r.t parameters of all items:
+
+```{r fig.width=12}
+#Prepare df with all params
+mirt_params_IRT <- cbind(mirt_params_IRT, cdi)
+mirt_params_IRT$top100 <- FALSE
+mirt_params_IRT[best_items_ids, "top100"] <- TRUE
+
+#Create plot
+ggplot(mirt_params_IRT, aes(b, a, colour = top100)) +
+  geom_point() +
+  xlab("Difficulty") +
+  ylab("Discrimination") +
+  labs(colour = "Top 100") +
+  scale_color_manual(values = c("Black", "Green"))
+```
