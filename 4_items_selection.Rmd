@@ -163,3 +163,25 @@ ggplot(mirt_params_IRT, aes(b, a, colour = top100)) +
   labs(colour = "Top 100") +
   scale_color_manual(values = c("Black", "Green"))
 ```
+
+# CTT difficulty and discrimination
+
+```{r}
+difficulties <- colSums(responses) / nrow(responses)
+discriminations <- c()
+row_sums <- rowSums(responses)
+
+for (item in colnames(responses)){
+  item_responses <- responses[,item]
+  cor <- cor(item_responses, row_sums)
+  discriminations <- c(discriminations, cor)
+}
+
+ctt_params <- data.frame(Dffclt = difficulties, Dscrmn = discriminations)
+
+ggplot(ctt_params, aes(Dffclt, Dscrmn)) +
+  geom_point() +
+  xlab("Difficulty") +
+  ylab("Discrimination")
+```
+
