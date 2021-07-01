@@ -14,8 +14,17 @@ Content:
 * Items used in simulations
   + SE 0.173 stop criterion
   + SE 0.173 + 50 max items stop criterion
+* Models with restricted set of items (146)
+  + mirt 61 quadratures
+  + mirt 101 quadratures
+  + mirt 61 quadratures no easy items (146 - 2)
+  + mirt 101 quadratures no easy items
+  + mirt 151 quadratures no easy items
+  + ltm 101 quadratures no easy items
+  + ltm 101 quadratures + 472 iterations no easy items
+  + TAM default
+  + TAM 101 snodes
 * CTT difficulty and discrimination
-
 
 ```{r libraries, message=FALSE, warning=FALSE}
 library(mirt)
@@ -23,6 +32,8 @@ library(mirtCAT)
 library(parallel) #Speeds up simulations (many in parallel)
 library(plyr) #For laply
 library(ggpubr) #For making plots
+library(ltm)
+library(TAM)
 ```
 
 Load already prepared responses & cdi content:
@@ -271,6 +282,216 @@ ggplot(mirt_params_IRT, aes(b, a, colour = top100)) +
   scale_color_manual(values = c("Black", "Green"))
 ```
 
+# Models with restricted set of items
+
+Let's create models with 146 items that was used during last simulations:
+
+## mirt 61 quadratures
+
+```{r}
+responses_r <- responses[,best_items_ids]
+```
+
+```{r results='hide', eval = FALSE}
+mirt_model <- mirt(responses_r, 1, SE=TRUE)
+```
+
+```{r include=FALSE}
+load("Data/mirt_model_146r")
+```
+
+```{r}
+mirt_model
+```
+
+```{r}
+mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
+head(mirt_params)
+```
+
+Let's check if increasing number of quadratures changes something here:
+
+## mirt 101 quadratures
+
+```{r results='hide', eval=FALSE}
+mirt_model <- mirt(responses_r, 1, SE=TRUE, quadpts = 101)
+```
+
+```{r include=FALSE}
+load("Data/mirt_model_146r_101q")
+```
+
+```{r}
+mirt_model
+```
+
+```{r}
+mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
+head(mirt_params)
+```
+
+So there's gain in Log-likelihood and parameters are a bit different. Let's check if there are any ceiling or floor items:
+
+## mirt 61 quadratures no easy items
+
+```{r}
+difficulties <- colSums(responses_r) / nrow(responses_r)
+```
+
+```{r}
+any(difficulties > 0.95)
+```
+
+```{r}
+which(difficulties > 0.95)
+```
+
+```{r}
+any(difficulties < 0.05)
+```
+
+Let's remove very easy items:
+
+```{r}
+responses_r <- responses[, best_items_ids[!best_items_ids %in% names(which(difficulties > 0.95))]]
+ncol(responses_r)
+```
+
+And again create model:
+
+```{r results='hide', eval = FALSE}
+mirt_model <- mirt(responses_r, 1, SE=TRUE)
+```
+
+```{r include=FALSE}
+load("Data/mirt_model_r")
+```
+
+```{r}
+mirt_model
+```
+
+```{r}
+mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
+head(mirt_params)
+```
+
+## mirt 101 quadratures no easy items
+
+```{r results='hide', eval=FALSE}
+mirt_model <- mirt(responses_r, 1, SE=TRUE, quadpts = 101)
+```
+
+```{r include=FALSE}
+load("Data/mirt_model_101q_r")
+```
+
+```{r}
+mirt_model
+```
+
+```{r}
+mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
+head(mirt_params)
+```
+
+So still *model with higher number of quadratures gains Log-Likelihood even without these very easy items*. Let's check if there is more precision to gain with higher number of quadratures:
+
+## mirt 151 quadratures no easy items
+
+```{r results='hide', eval=FALSE}
+mirt_model <- mirt(responses_r, 1, SE=TRUE, quadpts = 151, technical=list(NCYCLES=3000))
+```
+
+```{r include=FALSE}
+load("Data/mirt_model_151q_r")
+```
+
+```{r}
+mirt_model
+```
+
+```{r}
+mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
+head(mirt_params)
+```
+
+No further improvement, yay! So *101 quadratures is optimal number here*. Let's check ltm results:
+
+## ltm 101 quadratures no easy items
+
+```{r eval=FALSE}
+ltm_model <- ltm(responses_r ~ z1, IRT.param = FALSE, control = list(GHk = 101))
+```
+
+```{r include=FALSE}
+load("Data/ltm_model_101q_r")
+```
+
+```{r}
+summary(ltm_model)$logLik
+```
+
+```{r}
+ltm_params <- as.data.frame(coef(ltm_model))
+head(ltm_params)
+```
+
+## ltm 101 quadratures + 472 iterations no easy items
+
+Number of iterations is analogous to what mirt had.
+
+```{r eval=FALSE}
+ltm_model <- ltm(responses_r ~ z1, IRT.param = FALSE, control = list(iter.em = 472, GHk = 101))
+```
+
+```{r include=FALSE}
+load("Data/ltm_model_101q_472i_r")
+```
+
+```{r}
+summary(ltm_model)$logLik
+```
+
+```{r}
+ltm_params <- as.data.frame(coef(ltm_model))
+head(ltm_params)
+```
+
+## TAM default
+
+```{r results='hide'}
+tam_model <- tam.mml.2pl(responses_r, irtmodel="2PL")
+```
+
+```{r}
+tam_model
+```
+
+```{r}
+tam_params<-data.frame(a1=tam_model$item[,"B.Cat1.Dim1"], d=tam_model$xsi$xsi)
+head(tam_params)
+```
+
+# TAM 101 snodes
+
+```{r results='hide', eval=FALSE}
+tam_model <- tam.mml.2pl(responses_r, irtmodel="2PL", control=list(snodes = 101, QMC=FALSE))
+```
+
+```{r include=FALSE}
+load("Data/tam_model_101s_r")
+```
+
+```{r}
+tam_model
+```
+
+```{r}
+tam_params<-data.frame(a1=tam_model$item[,"B.Cat1.Dim1"], d=tam_model$xsi$xsi)
+head(tam_params)
+```
+
 # CTT difficulty and discrimination
 
 ```{r}
@@ -291,4 +512,3 @@ ggplot(ctt_params, aes(Dffclt, Dscrmn)) +
   xlab("Difficulty") +
   ylab("Discrimination")
 ```
-
