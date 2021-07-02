@@ -1,5 +1,5 @@
 ---
-title: "Items selection"
+title: "Simulations & quadratures (144,146i)"
 author: "Piotr Król"
 date: "29 06 2021"
 output: html_document
@@ -24,7 +24,6 @@ Content:
   + ltm 101 quadratures + 472 iterations no easy items
   + TAM default
   + TAM 101 snodes
-* CTT difficulty and discrimination
 
 ```{r libraries, message=FALSE, warning=FALSE}
 library(mirt)
@@ -490,25 +489,4 @@ tam_model
 ```{r}
 tam_params<-data.frame(a1=tam_model$item[,"B.Cat1.Dim1"], d=tam_model$xsi$xsi)
 head(tam_params)
-```
-
-# CTT difficulty and discrimination
-
-```{r}
-difficulties <- colSums(responses) / nrow(responses)
-discriminations <- c()
-row_sums <- rowSums(responses)
-
-for (item in colnames(responses)){
-  item_responses <- responses[,item]
-  cor <- cor(item_responses, row_sums)
-  discriminations <- c(discriminations, cor)
-}
-
-ctt_params <- data.frame(Dffclt = difficulties, Dscrmn = discriminations)
-
-ggplot(ctt_params, aes(Dffclt, Dscrmn)) +
-  geom_point() +
-  xlab("Difficulty") +
-  ylab("Discrimination")
 ```

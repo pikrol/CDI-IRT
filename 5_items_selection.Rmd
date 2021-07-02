@@ -1,0 +1,111 @@
+---
+title: "Items selection"
+author: "Piotr Król"
+date: "2 07 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+```{r message=FALSE, warning=FALSE}
+library(CTT)
+library(ggpubr)
+```
+
+```{r message=FALSE}
+responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
+responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
+cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
+```
+
+Calculate parameters by hand:
+
+```{r}
+difficulties <- colSums(responses) / nrow(responses)
+discriminations <- c()
+row_sums <- rowSums(responses)
+
+for (item in colnames(responses)){
+  item_responses <- responses[,item]
+  cor <- cor(item_responses, row_sums)
+  discriminations <- c(discriminations, cor)
+}
+
+ctt_params <- data.frame(dffclt = difficulties, dscrmn = discriminations)
+head(ctt_params)
+```
+
+```{r}
+ggplot(ctt_params, aes(dffclt, dscrmn)) +
+  geom_point() +
+  xlab("Difficulty") +
+  ylab("Discrimination")
+```
+
+Calculate parameters with use of CTT package:
+
+```{r}
+ctt_analysis <- itemAnalysis(responses)
+ctt_params <- data.frame(dffclt = ctt_analysis$itemReport$itemMean, dscrmn = ctt_analysis$itemReport$pBis)
+head(ctt_params)
+```
+
+```{r}
+ggplot(ctt_params, aes(dffclt, dscrmn)) +
+  geom_point() +
+  xlab("Difficulty") +
+  ylab("Discrimination")
+```
+
+So, they are quite analogous. Let's count difficulties in months intervals:
+
+```{r}
+dffclts_months <- c()
+for (month in unique(responses_demo$months)){
+  responses <- responses_demo[responses_demo$months == month, ]
+  responses <- as.matrix(responses[,5:ncol(responses)])
+  ctt_analysis <- itemAnalysis(responses)
+  dffclts_months <- rbind(dffclts_months, ctt_analysis$itemReport$itemMean)
+}
+#rownames(dffclts_months) <- unique(responses_demo$months)
+```
+
+Count means by columns:
+
+```{r}
+means <- apply(dffclts_months, 2, mean)
+means[1:5]
+```
+
+Count correlations of items means by age with age:
+
+```{r}
+cors <- apply(dffclts_months, 2, FUN = function(x) cor(x, unique(responses_demo$months)))
+cors[1:5]
+```
+
+```{r}
+ctt_params$cors <- cors
+ggplot(ctt_params, aes(cors, dscrmn)) +
+  geom_point() +
+  xlab("Correlation") +
+  ylab("Discrimination")
+```
+
+```{r}
+ctt_params <- cbind(ctt_params, cdi)
+```
+
+```{r fig.width=12, fig.height=12}
+ggplot(ctt_params, aes(cors, dscrmn, label=position, colour=category)) +
+  geom_point() +
+  xlab("Correlation") +
+  ylab("Discrimination") +
+  geom_text(aes(label=ifelse(dscrmn < 0.6 & cors < 0.95, as.character(position),'')), check_overlap = T) +
+  theme(legend.position = "bottom")
+```
+
+
+
