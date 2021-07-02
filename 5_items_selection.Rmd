@@ -107,5 +107,23 @@ ggplot(ctt_params, aes(cors, dscrmn, label=position, colour=category)) +
   theme(legend.position = "bottom")
 ```
 
+Are items in tail due to difficulty?
 
+```{r}
+ctt_params$tail <- F
+ctt_params[ctt_params$dscrmn < 0.6 & ctt_params$cors < 0.95, "tail"] <- T
+cor(ctt_params$dffclt, ctt_params$tail)
+```
+
+```{r}
+mean(ctt_params[ctt_params$tail == T, "dffclt"])
+```
+
+```{r}
+mean(ctt_params[ctt_params$tail == F, "dffclt"])
+```
+
+```{r}
+summary(ctt_params[ctt_params$tail == T, "dffclt"])
+```
 
