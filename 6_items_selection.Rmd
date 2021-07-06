@@ -1,0 +1,130 @@
+---
+title: "Items selection (2)"
+author: "Piotr Król"
+date: "6 07 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+```{r message=FALSE, warning=FALSE}
+library(CTT)
+library(ltm)
+library(ggpubr)
+```
+
+```{r message=FALSE}
+responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
+responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
+cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
+```
+
+Count difficulties in months intervals:
+
+```{r warning=FALSE}
+dffclts_months <- c()
+for (month in unique(responses_demo$months)){
+  responses <- responses_demo[responses_demo$months == month, ]
+  responses <- as.matrix(responses[,5:ncol(responses)])
+  ctt_analysis <- itemAnalysis(responses)
+  dffclts_months <- rbind(dffclts_months, ctt_analysis$itemReport$itemMean)
+}
+```
+
+Count correlations of difficulties (means) by months with months:
+
+```{r}
+cors <- apply(dffclts_months, 2, FUN = function(x) cor(x, unique(responses_demo$months)))
+cors[1:5]
+```
+
+Count Pearson correlations of dichotomous responses (vector of size 2000+) with months:
+
+```{r}
+responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
+cors2 <- apply(responses, 2, FUN = function(x) cor(x, responses_demo$months))
+cors2[1:5]
+```
+
+So, **it's something completely different.**
+
+Count Point-Biserial Correlations:
+
+```{r}
+cors3 <- apply(responses, 2, FUN = function(x) biserial.cor(responses_demo$months, x))
+cors3[1:5]
+```
+
+So, they are analogous. Just sign is different.
+
+Let's put both two former correlations on one plot:
+
+```{r}
+ggplot(data.frame(cors1 = cors, cors2 = cors2), aes(cors1, cors2)) +
+  geom_point() +
+  xlab("Correlation of means with months") +
+  ylab("Correlaton of 0,1 responses with months")
+```
+
+Calculate parameters with use of CTT package:
+
+```{r}
+ctt_analysis <- itemAnalysis(responses)
+ctt_params <- data.frame(dffclt = ctt_analysis$itemReport$itemMean, dscrmn = ctt_analysis$itemReport$pBis)
+ctt_params <- cbind(ctt_params, cdi)
+ctt_params$cors1 <- cors
+ctt_params$cors2 <- cors2
+head(ctt_params)
+```
+
+Compare plots of discriminations and correlations of ages counted in two different ways:
+
+```{r, fig.width=12}
+plot1 <- ggplot(ctt_params, aes(cors1, dscrmn)) +
+  geom_point() +
+  xlab("Correlation") +
+  ylab("Discrimination") +
+  labs(title = "X axis - correlation of means with months")
+
+plot2 <- ggplot(ctt_params, aes(cors2, dscrmn)) +
+  geom_point() +
+  xlab("Correlation") +
+  ylab("Discrimination") +
+  labs(title = "X axis - correlation of dichotomous responses with months")
+
+ggarrange(plot1, plot2)
+```
+
+Same plot as recently, but with correlations counted in this new way (vector of 2000+ 0,1 responses and vector of 2000+ months):
+
+```{r fig.width=12, fig.height=12}
+ggplot(ctt_params, aes(cors2, dscrmn, label=position, colour=category)) +
+  geom_point() +
+  xlab("Correlation") +
+  ylab("Discrimination") +
+  geom_text(aes(label=ifelse(dscrmn < 0.6 & cors2 < 0.35, as.character(position),'')), check_overlap = T) +
+  theme(legend.position = "bottom")
+```
+
+Check 'be' (months means):
+
+```{r include=FALSE}
+# ggplot(data.frame(months = unique(responses_demo$months), dffclts = dffclts_months[, nr]), aes(months, dffclts)) +
+#   geom_point() +
+#   xlab("Age in months") +
+#   ylab("Mean difficulty") +
+#   labs(title = word)
+```
+
+```{r}
+word <- "be"
+nr <- ctt_params[ctt_params$position == "be", "number.ws"]
+
+ggscatter(data.frame(months = unique(responses_demo$months), dffclts = dffclts_months[, nr]), x = "months", y = "dffclts",
+  add = "reg.line", conf.int = TRUE,
+  cor.coef = TRUE, cor.method = "pearson",
+  xlab = "Age in months", ylab = "Mean difficulty", title = word)
+```
+
