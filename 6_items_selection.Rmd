@@ -108,6 +108,19 @@ ggplot(ctt_params, aes(cors2, dscrmn, label=position, colour=category)) +
   theme(legend.position = "bottom")
 ```
 
+Colour by difficulties:
+
+```{r fig.width=12, fig.height=12}
+ggplot(ctt_params, aes(cors2, dscrmn, label=position, colour=dffclt)) +
+  geom_point() +
+  xlab("Correlation") +
+  ylab("Discrimination") +
+  geom_text(aes(label=ifelse(dscrmn < 0.6 & cors2 < 0.35, as.character(position),'')), check_overlap = T) +
+  theme(legend.position = "bottom") +
+  scale_color_gradient(low="red", high="green") +
+  labs(colour = "Difficulty")
+```
+
 Check 'be' (months means):
 
 ```{r include=FALSE}
@@ -127,4 +140,3 @@ ggscatter(data.frame(months = unique(responses_demo$months), dffclts = dffclts_m
   cor.coef = TRUE, cor.method = "pearson",
   xlab = "Age in months", ylab = "Mean difficulty", title = word)
 ```
-
