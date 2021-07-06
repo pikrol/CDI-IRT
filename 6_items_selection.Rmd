@@ -121,6 +121,25 @@ ggplot(ctt_params, aes(cors2, dscrmn, label=position, colour=dffclt)) +
   labs(colour = "Difficulty")
 ```
 
+Check how many best items are the same as those selected in simulations:
+
+```{r}
+load("Data/best146")
+ctt_params$dist <- sqrt(ctt_params$dscrmn^2 + ctt_params$cors2^2) #Count distance of points from (0,0):
+ctt_params_o <- ctt_params[order(ctt_params$dist, decreasing = T), ] #Order by distance
+ctt_params_s <- ctt_params_o[1:146, ] #Select 146 'best' items
+table(ctt_params_s$number.ws %in% best_items$number.ws)
+```
+
+Only 10...
+
+Selet more:
+
+```{r}
+ctt_params_s <- ctt_params_o[1:200, ] #Select 200 'best' items
+table(ctt_params_s$number.ws %in% best_items$number.ws)
+```
+
 Check 'be' (months means):
 
 ```{r include=FALSE}
@@ -140,3 +159,6 @@ ggscatter(data.frame(months = unique(responses_demo$months), dffclts = dffclts_m
   cor.coef = TRUE, cor.method = "pearson",
   xlab = "Age in months", ylab = "Mean difficulty", title = word)
 ```
+
+
+
