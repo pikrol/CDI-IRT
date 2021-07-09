@@ -9,9 +9,18 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 ```
 
+Content:
+
+* Two ways of counting correlations of responses with ages
+* Correlation vs. dscrmn and category
+* Low correlation <=> easy items?
+* Best CTT items vs. best IRT items
+* Difficulty vs. age for particular item
+
 ```{r message=FALSE, warning=FALSE}
 library(CTT)
 library(ltm)
+library(mirt)
 library(ggpubr)
 ```
 
@@ -20,6 +29,8 @@ responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
 responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
 cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
 ```
+
+# Two ways of counting correlations of responses with ages
 
 Count difficulties in months intervals:
 
@@ -97,6 +108,8 @@ plot2 <- ggplot(ctt_params, aes(cors2, dscrmn)) +
 ggarrange(plot1, plot2)
 ```
 
+# Correlation vs. dscrmn and category
+
 Same plot as recently, but with correlations counted in this new way (vector of 2000+ 0,1 responses and vector of 2000+ months):
 
 ```{r fig.width=12, fig.height=12}
@@ -107,6 +120,8 @@ ggplot(ctt_params, aes(cors2, dscrmn, label=position, colour=category)) +
   geom_text(aes(label=ifelse(dscrmn < 0.6 & cors2 < 0.35, as.character(position),'')), check_overlap = T) +
   theme(legend.position = "bottom")
 ```
+
+# Low correlation <=> easy items?
 
 Colour by difficulties:
 
@@ -120,6 +135,8 @@ ggplot(ctt_params, aes(cors2, dscrmn, label=position, colour=dffclt)) +
   scale_color_gradient(low="red", high="green") +
   labs(colour = "Difficulty")
 ```
+
+# Best CTT items vs. best IRT items
 
 Check how many best items are the same as those selected in simulations:
 
@@ -139,6 +156,29 @@ Selet more:
 ctt_params_s <- ctt_params_o[1:200, ] #Select 200 'best' items
 table(ctt_params_s$number.ws %in% best_items$number.ws)
 ```
+
+Check relationship between CTT discrimination and IRT discrimination:
+
+```{r}
+load("Data/mirt_model_601q")
+mirt_params <- as.data.frame(coef(mirt_model, simplify = TRUE)$items)[1:2]
+
+ggscatter(data.frame(irt_dscrmn = mirt_params$a1, ctt_dscrmn = ctt_params$dscrmn), x = "irt_dscrmn", y = "ctt_dscrmn",
+  add = "reg.line", conf.int = TRUE,
+  cor.coef = TRUE, cor.method = "pearson",
+  xlab = "IRT discrimination", ylab = "CTT discrimination")
+```
+
+Check relationship between CTT difficulty and IRT difficulty:
+
+```{r}
+ggscatter(data.frame(irt_diff = mirt_params$d, ctt_diff= ctt_params$dffclt), x = "irt_diff", y = "ctt_diff",
+  add = "reg.line", conf.int = TRUE,
+  cor.coef = TRUE, cor.method = "pearson",
+  xlab = "IRT difficulty", ylab = "CTT difficulty")
+```
+
+# Difficulty vs. age for particular item
 
 Check 'be' (months means):
 
