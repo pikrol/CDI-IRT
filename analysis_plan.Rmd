@@ -1,0 +1,44 @@
+---
+title: "Pl-CDI-WG-comp IRT analysis"
+author: "Grzegorz Krajewski"
+date: "7/24/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Preliminary CAT simulation
+
+A CAT simulation to estimate (the number of) items not in use.
+
+### Initial IRT model fit
+
+Do we want to check items' fit and Crammer's Vs?
+
+### The simulation
+
+What are the default parameters?
+
+## CTT analysis
+
+We want items with good discrimination and correlation with age.
+Good correlation means high correlation. It's much trickier with discrimination,
+since we should possibly avoid too high discr.
+
+### Calculating CTT parameters
+
+### Plotting and excluding
+
+The pitfall here is that we might be excluding different items from those
+identified by the preliminary CAT simulation.
+Does it make sense? It might, as we needed the simulation to
+estimate the number of items to exclude, rather than to identify the "good" items
+to keep. The main reason for the exclusion was the fact that the IRT model fit
+was unstable (possibly due to too many items). But relying on the results of
+a simulation based on an unstable model seems a bit circular...
+
+Maybe we should drop the whole "preliminary simulation" and just go with the CTT based
+exclusion, with stability of the model fit as a criterion for the number of items to keep
+(drop some items -> try the fit -> drop more -> try again etc.)
