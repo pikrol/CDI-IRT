@@ -1,0 +1,439 @@
+---
+title: "Full and restricted model. Simulations"
+author: "Piotr Król"
+date: "26 07 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+Content:
+
+* Model on full pool (670 items)
+  + Items fit
+  + Local dependence
+  + Simulation 100 random items
+  + Simulation 50 random items
+  + Simulation max 50 items, SE = .15
+  + Simulation with Kachergis' specification (adds also min 25 items)
+* Model on restricted pool (200 items)
+  + Items selection
+  + Model creation
+  + Items fit
+  + Local dependence
+  + Simulation with Kachergis settings
+
+```{r libraries, warning=FALSE, message=FALSE}
+library(mirt)
+library(mirtCAT)
+library(parallel)
+library(ggpubr)
+library(plyr)
+library(CTT)
+```
+
+```{r data loading, include=F}
+load("Data/8_full&restricted.RData")
+```
+
+# Model on full pool (670 items)
+
+Take model with 601 quadratures:
+
+```{r model}
+mod
+```
+## Items fit
+
+```{r itemfit, eval=F}
+itemfit <- itemfit(mod, method = "MAP") #Use default S_X2 statistic and MAP ability estimation
+```
+
+```{r}
+head(itemfit)
+```
+
+Number of misfits before correction (for p = 0.1):
+
+```{r}
+length(which(itemfit$p.S_X2 < 0.1))
+```
+Number of misfits after correction:
+
+```{r}
+itemfit$p.S_X2_fdr <- p.adjust(itemfit$p.S_X2, 'fdr')
+length(which(itemfit$p.S_X2_fdr < 0.1))
+```
+Check histogram of p-values:
+
+```{r}
+hist(itemfit$p.S_X2_fdr, main = "p values for items fit", xlab = "p value")
+```
+```{r}
+length(which(itemfit$p.S_X2_fdr < 0.3))
+```
+Check RMSEA values used which helps gauge the magnitude of item misfit:
+
+```{r}
+hist(itemfit$RMSEA.S_X2, main = "RMSEA values for items fit", xlab = "RMSEA")
+```
+Check how many items have RMSEA higher than 0.01:
+
+```{r}
+length(which(itemfit$RMSEA.S_X2 > 0.01))
+```
+Check p-values of those items:
+
+```{r}
+hist(itemfit[itemfit$RMSEA.S_X2 > 0.01, ]$p.S_X2_fdr, main = "p values for items fit for large RMSEA", xlab = "p value")
+```
+Check what items have both RMSEA > 0.01 and p < 0.3:
+
+```{r}
+itemfit[itemfit$RMSEA.S_X2 > 0.01 & itemfit$p.S_X2_fdr < 0.3, ]
+```
+```{r}
+cdi[row.names(itemfit[itemfit$RMSEA.S_X2 > 0.01 & itemfit$p.S_X2_fdr < 0.3, ]), ]
+```
+## Local dependence
+
+```{r residuals, eval=F}
+residuals <- residuals(mod)
+```
+
+Check signed Cramers V coefficients:
+
+```{r}
+hist(residuals[upper.tri(residuals)], main="Histogram of signed Cramers V coefficients", xlab= "Cramers V")
+```
+So there are no items even close to Kachergis' Cramer's V = 0.5
+
+## Simulations full pool
+
+```{r eval=F}
+fscores <- fscores(mod, method = "MAP")
+params <- as.data.frame(coef(mod, simplify = TRUE)$items)[1:2]
+mo <- generate.mirt_object(params, '2PL')
+cl <- makeCluster(detectCores()) #Speeds up simulations (many in paralell)
+```
+
+### 100 random items
+
+```{r eval=F}
+sim_results_100 <- mirtCAT(mo = mo, method = "MAP", criteria = "random", start_item = "random", local_pattern = responses, cl = cl, design = list(min_items = 100, max_items = 100))
+```
+
+#### Correlations
+
+```{r, fig.width=12}
+sim_results <- sim_results_100
+thetas <- laply(sim_results, function(x) x$thetas)
+ggscatter(data.frame(est = thetas, full = as.numeric(fscores)), x = "est", y = "full",
+                  add = "reg.line", conf.int = TRUE,
+                  cor.coef = TRUE, cor.method = "pearson",
+                  xlab = "Estimated theta", ylab = "Full CDI theta", title = "Correlation between abilities from full CDI and CAT-estimated abilities with 100 randomly selected items")
+```
+```{r}
+cor(thetas, as.numeric(fscores))
+```
+In Kachergis it was 0.985 for English production.
+
+#### SE
+
+```{r}
+SEthetas <- laply(sim_results, function(x) x$SE_thetas)
+ggscatter(data.frame(est = thetas, SE = SEthetas), y = "SE", x = "est",
+                  xlab = "Theta", ylab = "SE", title = paste0("\nAverage SE: ", round(mean(SEthetas),3)))
+```
+In Kachergis it was 0.188 for English production. Do we have model with better fit?
+
+### 50 random items
+
+```{r eval=F}
+cl <- makeCluster(detectCores())
+sim_results_50 <- mirtCAT(mo = mo, method = "MAP", criteria = "random", start_item = "random", local_pattern = responses, cl = cl, design = list(min_items = 50, max_items = 50))
+```
+#### Correlation
+
+```{r}
+sim_results <- sim_results_50
+thetas <- laply(sim_results, function(x) x$thetas)
+cor(thetas, as.numeric(fscores))
+```
+In Kachergis it was also 0.971
+
+#### Average SE
+
+```{r}
+SEthetas <- laply(sim_results, function(x) x$SE_thetas)
+round(mean(SEthetas),3)
+```
+In Kachergis it was 0.242
+
+### max 50 items, SE = 0.15, MI item selection
+
+```{r eval=F}
+cl <- makeCluster(detectCores())
+sim_results_qk <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.15, max_items = 50))
+```
+#### Correlation
+
+```{r}
+sim_results <- sim_results_qk
+thetas <- laply(sim_results, function(x) x$thetas)
+cor(thetas, as.numeric(fscores))
+```
+#### Average SE
+
+```{r}
+SEthetas <- laply(sim_results, function(x) x$SE_thetas)
+round(mean(SEthetas),3)
+```
+#### Mean number of items
+
+```{r}
+items_answered <- laply(sim_results, function(x) length(x$items_answered))
+round(mean(items_answered), 1)
+```
+#### Unused items
+
+```{r}
+#Prepare df with frequencies of usage of items
+frequency_df <- data.frame(number.ws = c(1:nrow(params)), freq = rep(0, nrow(params)))
+
+#Update df with number of occurence of given item
+for (p in 1:length(sim_results)){
+  items <- sim_results[[p]]$items_answered
+  for (number.ws in items){
+    frequency_df[frequency_df["number.ws"] == number.ws, "freq"] <- frequency_df[frequency_df["number.ws"] == number.ws, "freq"] + 1
+  }
+}
+
+length(which(frequency_df$freq == 0))
+```
+
+### Kachergis specification: min 25 items, max 50 items, SE = 0.15
+
+```{r eval=F}
+cl <- makeCluster(detectCores())
+sim_results_k <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.15, min_items = 25, max_items = 50))
+```
+
+#### Correlation
+
+```{r}
+sim_results <- sim_results_k
+thetas <- laply(sim_results, function(x) x$thetas)
+cor(thetas, as.numeric(fscores))
+```
+In Kachergis it was 0.993 (for English production)
+
+#### Average SE
+
+```{r}
+SEthetas <- laply(sim_results, function(x) x$SE_thetas)
+round(mean(SEthetas),3)
+```
+In Kachergis it was 0.136
+
+#### Mean number of items
+
+```{r}
+items_answered <- laply(sim_results, function(x) length(x$items_answered))
+round(mean(items_answered), 1)
+```
+In Kachergis it was 39.5 (we can have on average 10 items shorter tests?)
+
+#### Unused items
+
+Prepare frequency table:
+
+```{r}
+#Prepare df with frequencies of usage of items
+frequency_df <- data.frame(number.ws = c(1:nrow(params)), freq = rep(0, nrow(params)))
+
+#Update df with number of occurence of given item
+for (p in 1:length(sim_results)){
+  items <- sim_results[[p]]$items_answered
+  for (number.ws in items){
+    frequency_df[frequency_df["number.ws"] == number.ws, "freq"] <- frequency_df[frequency_df["number.ws"] == number.ws, "freq"] + 1
+  }
+}
+
+length(which(frequency_df$freq == 0))
+```
+In Kachergis it was 405
+
+# Model on restricted pool (200 items)
+
+## Items selection
+
+Calculate CTT parameters and distance from (0,0)
+
+```{r}
+cors <- apply(responses, 2, FUN = function(x) cor(x, responses_demo$months))
+ctt_analysis <- itemAnalysis(responses)
+ctt_params <- data.frame(dffclt = ctt_analysis$itemReport$itemMean, dscrmn = ctt_analysis$itemReport$pBis, cors = cors)
+ctt_params$dist <- sqrt(ctt_params$dscrmn^2 + ctt_params$cors^2) 
+ctt_params <- cbind(ctt_params, cdi)
+```
+
+Colour by difficulties:
+
+```{r fig.width=12, fig.height=12}
+ggplot(ctt_params, aes(cors, dscrmn, label=position, colour=dffclt)) +
+  geom_point() +
+  xlab("Correlation of age with responses") +
+  ylab("Discrimination") +
+  geom_text(aes(label=ifelse(dscrmn < 0.6 & cors < 0.35, as.character(position),'')), check_overlap = T) +
+  theme(legend.position = "bottom") +
+  scale_color_gradient(low="red", high="green") +
+  labs(colour = "Difficulty")
+```
+
+Select best 200 items:
+
+```{r}
+ctt_params_s <- ctt_params[order(ctt_params$dist, decreasing = T), ][1:200, ]
+ctt_params[ctt_params$number.ws %in% ctt_params_s$number.ws, "best200"] <- TRUE
+ctt_params[is.na(ctt_params$best200), "best200"] <- FALSE
+```
+
+Visualize it:
+
+```{r fig.width=12, fig.height=12}
+ggplot(ctt_params, aes(cors, dscrmn, colour=best200)) +
+  geom_point() +
+  xlab("Correlation of age with responses") +
+  ylab("Discrimination") +
+  theme(legend.position = "bottom") +
+  labs(colour = "best200")
+```
+
+## Model creation
+
+```{r eval=F}
+mod_restr <- mirt(data = responses[, row.names(ctt_params_s)], model = 1, SE = TRUE)
+```
+```{r}
+mod_restr
+```
+Check if increasing number of quadratures changes something:
+
+```{r eval=F}
+mod_restr2 <- mirt(data = responses[, row.names(ctt_params_s)], model = 1, SE = TRUE, quadtps = 101)
+```
+```{r}
+mod_restr2
+```
+No change in log-likelihood. Default settings are enough in this case (with use of 200 items)
+
+## Items fit
+
+```{r eval=F}
+itemfit_r <- itemfit(mod_restr, method = "MAP") #Use default S_X2 statistic and MAP ability estimation
+```
+
+Number of misfits before correction (for p = 0.1):
+
+```{r}
+length(which(itemfit_r$p.S_X2 < 0.1))
+```
+Number of misfits after correction:
+
+```{r}
+itemfit_r$p.S_X2_fdr <- p.adjust(itemfit_r$p.S_X2, 'fdr')
+length(which(itemfit_r$p.S_X2_fdr < 0.1))
+```
+Check histogram of p-values:
+
+```{r}
+hist(itemfit_r$p.S_X2_fdr, main = "p values for items fit", xlab = "p value")
+```
+
+Check RSMEA values:
+
+```{r}
+hist(itemfit_r$RMSEA.S_X2, main = "RMSEA values for items fit", xlab = "RMSEA")
+```
+Check what items have both RMSEA > 0.012 and p < 0.2:
+
+```{r}
+itemfit_r[itemfit_r$RMSEA.S_X2 > 0.012 | itemfit_r$p.S_X2_fdr < 0.2, ]
+```
+```{r}
+cdi[row.names(itemfit_r[itemfit_r$RMSEA.S_X2 > 0.012 | itemfit_r$p.S_X2_fdr < 0.2, ]), ]
+```
+
+So truskawki and śliniaczek should be probably removed. These are different items than earlier.
+
+## Local dependence
+
+```{r eval=F}
+residuals_r <- residuals(mod_restr)
+```
+
+Check signed Cramers V coefficients:
+
+```{r}
+hist(residuals_r[upper.tri(residuals_r)], main="Histogram of signed Cramers V coefficients", xlab= "Cramers V")
+```
+
+Again, no high Cramers Vs
+
+## Simulation with Kachergis setting
+
+```{r eval=F}
+fscores_r <- fscores(mod_restr, method = "MAP")
+params_r <- as.data.frame(coef(mod_restr, simplify = TRUE)$items)[1:2]
+mo_r <- generate.mirt_object(params_r, '2PL')
+cl <- makeCluster(detectCores())
+sim_results_k_r <- mirtCAT(mo = mo_r, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses[, row.names(ctt_params_s)], cl = cl, design = list(min_SEM = 0.15, min_items = 25, max_items = 50))
+```
+
+#### Correlation
+
+```{r}
+sim_results <- sim_results_k_r
+thetas <- laply(sim_results, function(x) x$thetas)
+cor(thetas, as.numeric(fscores_r))
+```
+In full pool it was 0.9820521
+
+#### Average SE
+
+```{r}
+SEthetas <- laply(sim_results, function(x) x$SE_thetas)
+round(mean(SEthetas),3)
+```
+In full pool it was 0.121. So it's much worse with this restricted set of items
+
+#### Mean number of items
+
+```{r}
+items_answered <- laply(sim_results, function(x) length(x$items_answered))
+round(mean(items_answered), 1)
+```
+In full pool it was 29.6. So it's also much worse.
+
+#### Unused items
+
+Prepare frequency table:
+
+```{r}
+#Prepare df with frequencies of usage of items
+frequency_df <- data.frame(number.ws = c(1:nrow(params_r)), freq = rep(0, nrow(params_r)))
+
+#Update df with number of occurence of given item
+for (p in 1:length(sim_results)){
+  items <- sim_results[[p]]$items_answered
+  for (number.ws in items){
+    frequency_df[frequency_df["number.ws"] == number.ws, "freq"] <- frequency_df[frequency_df["number.ws"] == number.ws, "freq"] + 1
+  }
+}
+
+length(which(frequency_df$freq == 0))
+```
+In full pool it was 430
