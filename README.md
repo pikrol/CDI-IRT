@@ -10,4 +10,4 @@ które wrzucamy do folderu "Data".
 **Raport 5 - 02.07.2021 - Items selection** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/5_items_selection.html <br/>
 **Raport 6 - 06.07.2021 - Items selection (2)** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/6_items_selection.html <br/>
 **Raport 7 - 19.07.2021 - Models for English comprehension** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/7_english_data.html <br/>
-**Raport 8 - 26.07.2021 - Full and restricted model. Simulations** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/8_full&restricted.html
+**Raport 8 - 26.07.2021 - Full and restricted model. Simulations** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/8_full-restricted.html
