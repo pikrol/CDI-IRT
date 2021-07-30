@@ -1,0 +1,148 @@
+---
+title: "Simulations with different number of quadratures"
+author: "Piotr Król"
+date: "30 07 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+Content
+
+Simulations with Kachergis stop criteria on:
+
+* Model with default 61 quadratures
+* Model with 601 quadratures
+* Model with 451 quadratures
+
+```{r libraries, warning=FALSE, message=FALSE}
+library(mirt)
+library(mirtCAT)
+library(parallel)
+library(plyr)
+```
+
+```{r data loading, message=FALSE}
+responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
+responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
+load("Data/9_simulations&quadratures.RData")
+```
+
+# Model with default 61 quadratures
+
+```{r}
+mod61q
+```
+```{r eval=F}
+params <- as.data.frame(coef(mod61q, simplify = TRUE)$items)[1:2]
+mo <- generate.mirt_object(params, '2PL')
+cl <- makeCluster(detectCores())
+sim_results_61q <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.15, min_items = 25, max_items = 50))
+fscores61q <- fscores(mod61q, method = "MAP")
+```
+
+```{r}
+sim_results <- sim_results_61q
+thetas <- laply(sim_results, function(x) x$thetas)
+fscores <- fscores61q
+```
+
+#### Correlation
+
+```{r}
+round(cor(thetas, as.numeric(fscores)), 3)
+```
+
+#### Average SE
+
+```{r}
+SEthetas <- laply(sim_results, function(x) x$SE_thetas)
+round(mean(SEthetas),3)
+```
+
+#### Mean number of items used in each test
+
+```{r}
+items_answered <- laply(sim_results, function(x) length(x$items_answered))
+round(mean(items_answered), 1)
+```
+# Model with 601 quadratures
+
+```{r}
+mod601q
+```
+```{r eval=F}
+params <- as.data.frame(coef(mod601q, simplify = TRUE)$items)[1:2]
+mo <- generate.mirt_object(params, '2PL')
+cl <- makeCluster(detectCores())
+sim_results_601q <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.15, min_items = 25, max_items = 50))
+fscores601q <- fscores(mod601q, method = "MAP")
+```
+
+```{r}
+sim_results <- sim_results_601q
+thetas <- laply(sim_results, function(x) x$thetas)
+fscores <- fscores601q
+```
+
+#### Correlation
+
+```{r}
+round(cor(thetas, as.numeric(fscores)), 3)
+```
+
+#### Average SE
+
+```{r}
+SEthetas <- laply(sim_results, function(x) x$SE_thetas)
+round(mean(SEthetas),3)
+```
+
+#### Mean number of items used in each test
+
+```{r}
+items_answered <- laply(sim_results, function(x) length(x$items_answered))
+round(mean(items_answered), 1)
+```
+
+# Model with 451 quadratures
+
+```{r}
+mod451q
+```
+
+```{r eval=F}
+params <- as.data.frame(coef(mod451q, simplify = TRUE)$items)[1:2]
+mo <- generate.mirt_object(params, '2PL')
+cl <- makeCluster(detectCores())
+sim_results_451q <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.15, min_items = 25, max_items = 50))
+fscores451q <- fscores(mod451q, method = "MAP")
+```
+
+```{r}
+sim_results <- sim_results_451q
+thetas <- laply(sim_results, function(x) x$thetas)
+fscores <- fscores451q
+```
+
+#### Correlation
+
+```{r}
+round(cor(thetas, as.numeric(fscores)), 3)
+```
+
+#### Average SE
+
+```{r}
+SEthetas <- laply(sim_results, function(x) x$SE_thetas)
+round(mean(SEthetas),3)
+```
+
+#### Mean number of items used in each test
+
+```{r}
+items_answered <- laply(sim_results, function(x) length(x$items_answered))
+round(mean(items_answered), 1)
+```
