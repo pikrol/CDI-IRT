@@ -11,4 +11,13 @@ które wrzucamy do folderu "Data".
 **Raport 6 - 06.07.2021 - Items selection (2)** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/6_items_selection.html <br/>
 **Raport 7 - 19.07.2021 - Models for English comprehension** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/7_english_data.html <br/>
 **Raport 8 - 26.07.2021 - Full and restricted model. Simulations** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/8_full-restricted.html <br/>
-**Raport 9 - 30.07.2021 - Simulations with different number of quadratures** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/9_simulations&quadratures.html
+**Raport 9 - 30.07.2021 - Simulations with different number of quadratures** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/9_simulations&quadratures.html <br/>
+
+<br/>
+
+---
+
+<br/>
+
+**02.08.2021 - Model fit** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/model_fit.html <br/>
+
