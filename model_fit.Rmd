@@ -1,0 +1,76 @@
+---
+title: "Model fit"
+author: "Piotr Król"
+date: "02 08 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+Content:
+
+* Items fit
+
+```{r libraries, warning=FALSE, message=FALSE}
+library(mirt)
+```
+
+Load already prepared data:
+
+```{r eval=F}
+load("Data/mirt_model_601q")
+cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
+```
+
+```{r include=F, eval=F}
+mod <- mirt_model
+rm(mirt_model)
+```
+
+```{r include=F}
+load("Data/model_fit.RData")
+```
+
+```{r}
+mod
+```
+# Items fit
+
+```{r eval=F}
+itemfit <- itemfit(mod, method = "MAP") #Use default S_X2 statistic and MAP ability estimation
+```
+
+```{r}
+head(itemfit)
+```
+
+Number of misfits without any correction (for p = 0.01):
+
+```{r}
+length(which(itemfit$p.S_X2 < 0.01))
+```
+Number of misfits without any correction (for p = 0.001):
+
+```{r}
+length(which(itemfit$p.S_X2 < 0.001))
+```
+```{r}
+itemfit[itemfit$p.S_X2 < 0.001, ]
+```
+
+```{r}
+cdi[row.names(itemfit[itemfit$p.S_X2 < 0.001, ]), ]
+```
+
+```{r}
+hist(itemfit$RMSEA.S_X2)
+```
+```{r}
+itemfit(mod, method = 'MAP', empirical.plot = 392, empirical.CI = .95)
+```
+
+```{r}
+itemfit(mod, method = 'MAP', empirical.plot = 392, empirical.CI = .99)
+```
