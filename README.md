@@ -19,5 +19,6 @@ które wrzucamy do folderu "Data".
 
 <br/>
 
-**02.08.2021 - Model fit** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/model_fit.html <br/>
+**Model fit** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/model_fit.html <br/>
+**Simulations** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/simulations.html <br/>
 
