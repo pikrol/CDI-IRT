@@ -13,7 +13,8 @@ Content:
 
 * Fixed-length CAT simulations with random selection of items
 * Fixed-length CAT simulations with MI item selection criteria
-* Early-stopping CAT simulations with needed SE = 0.15
+* Early-stopping CAT simulations with needed SE = 0.1
+* CAT simulations with stop when SE = 0.15 or some maximum number of items is reached
 * Start item by age and gender vs. not
 
 ```{r warning=FALSE, message=FALSE}
@@ -22,6 +23,7 @@ library(mirtCAT)
 library(parallel)
 library(plyr)
 library(beepr)
+library(ggpubr)
 ```
 ```{r eval=F}
 responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
@@ -136,10 +138,67 @@ beep(sound=8)
 results_fixed_length_MI
 ```
 
-## Early-stopping CAT simulations with needed SE = 0.15
+## Early-stopping CAT simulations with needed SE = 0.1
 
 ```{r eval=F}
-results_SE15 <- data.frame(maxlength = NA, avglength = NA, cor = NA, avgSE = NA, rel = NA, unused = NA)
+results_SE1 <- data.frame(avglength = NA, cor = NA, avgSE = NA, rel = NA, unused = NA)
+  
+#Make simulation
+cl <- makeCluster(detectCores())
+sim_results <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.1))
+
+#Obtain average test length
+tests_lengths <- laply(sim_results, function(x) length(x$items_answered))
+avglength <- round(mean(tests_lengths), 1)
+
+#Obtain thetas
+thetas <- laply(sim_results, function(x) x$thetas)
+
+#Get correlation of thetas with full scores
+cor <- round(cor(thetas, as.numeric(fscores)), 3)
+
+#Get average SE
+avgSE <- round(mean(laply(sim_results, function(x) x$SE_thetas)),3)
+
+#Get reliability
+rel <- round(1 - avgSE**2, 3)
+
+#Get number of unused items
+raw_responses <- laply(sim_results, function(x) x$raw_responses)
+items_used <- length(which(apply(raw_responses, 2, function(x) any(!is.na(x)))))
+unused <- nrow(params) - items_used
+
+#Update data frame with results
+results_SE1 <- rbind(results_SE1, c(avglength, cor, avgSE, rel, unused))
+
+#Prepare cuts
+cuts <- cut(tests_lengths, breaks = c(0, 5, 10, 15, 25, 35, 50, 75, 100, 200, 669, 670), labels = c("1 - 5", "6 - 10", "11 - 15", "16 - 25", "26 - 35", "36 - 50", "51 - 75", "76 - 100", "101 - 200", "201 - 669", "670"), dig.lab = 0)
+
+#Plot distribution of tests lengths
+plot_SE1 <- ggplot(data.frame(table(cuts)), aes(x = cuts, y = Freq)) +
+  xlab("Number of items in the test") +
+  ylab("Number of tests") +
+  geom_bar(stat = "identity") +
+  ggtitle("Tests lengths for SE = 0.1 stop criterion") +
+  geom_text(aes(label = Freq), vjust = -0.3) + 
+  theme_pubclean() 
+  
+results_SE1 <- na.omit(results_SE1)
+beep(sound=8)
+```
+
+```{r}
+results_SE1
+```
+
+```{r}
+plot_SE1
+```
+
+## CAT simulations with stop when SE = 0.15 or some maximum number of items is reached
+
+```{r eval=F}
+results_SE15_max <- data.frame(maxlength = NA, avglength = NA, cor = NA, avgSE = NA, rel = NA, unused = NA)
 
 for (n in lengths){
   
@@ -168,16 +227,16 @@ for (n in lengths){
   unused <- nrow(params) - items_used
   
   #Update data frame with results
-  results_SE15 <- rbind(results_SE15, c(n, avglength, cor, avgSE, rel, unused))
+  results_SE15_max <- rbind(results_SE15_max, c(n, avglength, cor, avgSE, rel, unused))
   
 }
 
-results_SE15 <- na.omit(results_SE15)
+results_SE15_max <- na.omit(results_SE15_max)
 beep(sound=8)
 ```
 
 ```{r}
-results_SE15
+results_SE15_max
 ```
 
 ## Start item by age and gender vs. not
