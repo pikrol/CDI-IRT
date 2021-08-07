@@ -1,0 +1,93 @@
+---
+title: "Fixed-length CAT simulations"
+author: "Piotr Król"
+date: "07 08 2021"
+output: html_document
+---
+
+```{r setup, include=F}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+```{r libraries, warning=F, message=F}
+library(mirt)
+library(mirtCAT)
+library(parallel)
+library(plyr)
+library(ggpubr)
+```
+
+```{r data loading, eval=F}
+responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
+responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
+load("Data/mod")
+```
+
+```{r data loading 2, include=F}
+load("Data/fixed_length_CAT.RData")
+```
+
+```{r model}
+mod
+```
+Prepare full scores, params and mirt object for simulations:
+
+```{r preparation, eval=F}
+fscores <- as.data.frame(fscores(mod, method = "MAP", full.scores.SE = T)) #Obtain full scores
+params <- as.data.frame(coef(mod, simplify = T)$items)[1:2] #Prepare params
+mo <- generate.mirt_object(params, '2PL') #Prepare mirt object
+```
+
+```{r plots}
+plot(fscores)
+plot(params)
+```
+
+Make fixed-length simulations with different number of items administered:
+
+```{r simulations, eval=F}
+lengths <- c(5, 10, 15, 25, 35, 50, 75, 100)
+results_fixed_length <- data.frame(cor = NA, meanSE = NA, rel = NA, unused = NA)
+cl <- makeCluster(detectCores()) #Speeds up simulations - computation in parallel
+
+for (n in lengths){
+  
+  #Make simulation
+  sim_results <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_items = n, max_items = n))
+  
+  #Obtain thetas
+  thetas <- laply(sim_results, function(x) x$thetas)
+  
+  #Get correlation of thetas with full scores
+  cor <- round(cor(thetas, fscores$F1), 3)
+  
+  #Get mean SE
+  meanSE <- round(mean(laply(sim_results, function(x) x$SE_thetas)), 3)
+  
+  #Get reliability
+  rel <- round(1 - meanSE**2, 3)
+  
+  #Get number of unused items
+  items_answered <- laply(sim_results, function(x) x$items_answered)
+  unused <- nrow(params) - length(unique(as.vector(items_answered)))
+  
+  #Update data frame with results
+  results_fixed_length <- rbind(results_fixed_length, c(cor, meanSE, rel, unused))
+  
+}
+
+results_fixed_length <- na.omit(results_fixed_length)
+row.names(results_fixed_length) <- lengths
+save.image("Data/fixed_length_CAT.RData")
+```
+
+```{r}
+results_fixed_length
+```
+
+```{r}
+df <- data.frame(Length = row.names(results_fixed_length), Correlation = results_fixed_length$cor, Reliability = results_fixed_length$rel)
+ggscatter(df, y = c("Correlation", "Reliability"), x = "Length", merge = T,
+          xlab = "Length of the test", ylab = "Value of variable")
+```
+
