@@ -1,0 +1,100 @@
+---
+title: "Early stopping CAT simulations"
+author: "Piotr Król"
+date: "09 08 2021"
+output: html_document
+---
+
+```{r setup, include=F}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+```{r libraries, warning=F, message=F}
+library(mirt)
+library(mirtCAT)
+library(parallel)
+library(plyr)
+library(ggpubr)
+```
+
+```{r data loading, eval=F}
+responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
+responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
+load("Data/mod")
+```
+
+```{r data loading 2, include=F}
+load("Data/early_stop_CAT.RData")
+```
+
+```{r model}
+mod
+```
+Prepare full scores, params and mirt object for simulations:
+
+```{r preparation, eval=F}
+fscores <- as.data.frame(fscores(mod, method = "MAP", full.scores.SE = T)) #Obtain full scores
+params <- as.data.frame(coef(mod, simplify = T)$items)[1:2] #Prepare params
+mo <- generate.mirt_object(params, '2PL') #Prepare mirt object
+```
+
+```{r fscores plot}
+plot(fscores)
+```
+
+Make early-stopping simulation with desired SE = 0.173 (corresponding to 0.97 reliability):
+
+```{r simulation, eval=F}
+#Prepare cluster for faster simulation
+cl <- makeCluster(detectCores())
+
+#Make simulation
+sim_results <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.173))
+
+#Obtain mean test length
+tests_lengths <- laply(sim_results, function(x) length(x$items_answered))
+mean_length <- round(mean(tests_lengths), 1)
+
+#Obtain median test length
+median_length <- round(median(tests_lengths), 1)
+
+#Obtain thetas
+thetas <- laply(sim_results, function(x) x$thetas)
+
+#Get correlation of thetas with full scores
+cor <- round(cor(thetas, fscores$F1), 3)
+
+#Get mean SE
+meanSE <- round(mean(laply(sim_results, function(x) x$SE_thetas)), 3)
+
+#Get reliability
+rel <- round(1 - meanSE**2, 3)
+
+#Get number of unused items
+raw_responses <- laply(sim_results, function(x) x$raw_responses)
+items_used <- length(which(apply(raw_responses, 2, function(x) any(!is.na(x)))))
+unused <- nrow(params) - items_used
+  
+save.image("Data/early_stop_CAT.RData")
+```
+
+```{r}
+paste("Mean length:", mean_length, " Median length:", median_length, " Correlation:", cor, " Mean SE:", meanSE, " Reliability:", rel, " Unused:", unused)
+```
+
+Plot distribution of tests lengths:
+
+```{r fig.width=12}
+#Prepare cuts
+cuts <- cut(tests_lengths, breaks = c(0, 5, 10, 15, 25, 35, 50, 75, 100, 150, 200, 669, 670), labels = c("1 - 5", "6 - 10", "11 - 15", "16 - 25", "26 - 35", "36 - 50", "51 - 75", "76 - 100", "101 - 150", "151 - 200", "201 - 669", "670"))
+
+#Plot
+ggplot(data.frame(round(table(cuts) / nrow(responses) * 100, 1)), aes(x = cuts, y = Freq)) +
+  xlab("Number of items in the test") +
+  ylab("Percent of tests (%)") +
+  geom_bar(stat = "identity") +
+  ggtitle("Tests lengths for SE = 0.173 stop criterion") +
+  geom_text(aes(label = Freq), vjust = -0.3) + 
+  theme_pubclean() 
+```
+
