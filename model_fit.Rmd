@@ -1,7 +1,7 @@
 ---
 title: "Model fit"
 author: "Piotr Król"
-date: "02 08 2021"
+date: "16 08 2021"
 output: html_document
 ---
 
@@ -12,24 +12,25 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 Content:
 
 * Items fit
+* Local dependence
+  + Residuals
+  + Cramer's V
 
 ```{r libraries, warning=FALSE, message=FALSE}
 library(mirt)
+library(DescTools) #For Cramer's V calculation
 ```
 
 Load already prepared data:
 
-```{r eval=F}
-load("Data/mirt_model_601q")
+```{r data loading, eval=F}
+responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
+responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
 cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
+load("Data/mod")
 ```
 
-```{r include=F, eval=F}
-mod <- mirt_model
-rm(mirt_model)
-```
-
-```{r include=F}
+```{r data loading 2, include=F}
 load("Data/model_fit.RData")
 ```
 
@@ -46,12 +47,20 @@ itemfit <- itemfit(mod, method = "MAP") #Use default S_X2 statistic and MAP abil
 head(itemfit)
 ```
 
-Number of misfits without any correction (for p = 0.01):
+Misfits for p = 0.01:
 
 ```{r}
 length(which(itemfit$p.S_X2 < 0.01))
 ```
-Number of misfits without any correction (for p = 0.001):
+```{r}
+itemfit[itemfit$p.S_X2 < 0.01, ]
+```
+
+```{r}
+cdi[row.names(itemfit[itemfit$p.S_X2 < 0.01, ]), ]
+```
+
+Misfits for p = 0.001:
 
 ```{r}
 length(which(itemfit$p.S_X2 < 0.001))
@@ -67,10 +76,99 @@ cdi[row.names(itemfit[itemfit$p.S_X2 < 0.001, ]), ]
 ```{r}
 hist(itemfit$RMSEA.S_X2)
 ```
-```{r}
-itemfit(mod, method = 'MAP', empirical.plot = 392, empirical.CI = .95)
+
+# Local dependence
+
+## Residuals 
+
+"By default, residuals() computes the local dependence (LD)
+pairwise statistic between each pair of items, which is very similar to a signed 2 value (Chen
+and Thissen 1997). Also, a standardized version of the LD statistic (Cramer's V) is printed
+above the diagonal to aid in interpretation when items contain more than two response options
+and hence more degrees of freedom" ~ mirt documentation
+
+```{r eval=F}
+mirtCluster()
+residuals <- residuals(mod)
+residuals_up <- residuals
+residuals_down <- residuals
+residuals_up[lower.tri(residuals_up)] <- NA
+residuals_down[upper.tri(residuals_down)] <- NA
 ```
 
 ```{r}
-itemfit(mod, method = 'MAP', empirical.plot = 392, empirical.CI = .99)
+hist(residuals_up, main="Histogram of signed Cramer's V coefficients", xlab= "Cramers V")
+```
+```{r}
+summary(as.vector(residuals_up))
+```
+Check positions with the highest Cramer's V:
+
+```{r}
+indexes <- arrayInd(which(residuals_up > 0.3), dim(residuals))
+data.frame(pos1 = cdi[indexes[, 1], "position"], pos2 = cdi[indexes[, 2], "position"], CramersV = residuals_up[indexes])
+```
+Check positions with the lowest Cramer's V:
+
+```{r}
+indexes <- arrayInd(which(residuals_up < -0.14), dim(residuals))
+data.frame(pos1 = cdi[indexes[, 1], "position"], pos2 = cdi[indexes[, 2], "position"], CramersV = residuals_up[indexes])
+```
+
+```{r}
+hist(residuals_down, main="Histogram of Chi-squares", xlab= "Chi-square")
+```
+```{r}
+summary(as.vector(residuals_down))
+```
+Check positions with the highest Chi-squares:
+
+```{r}
+indexes <- arrayInd(which(residuals_down > 200), dim(residuals))
+data.frame(pos1 = cdi[indexes[, 1], "position"], pos2 = cdi[indexes[, 2], "position"], Chi.sq = residuals_down[indexes])
+```
+
+How many items have Chi.sq > 100 with at least one item:
+
+```{r}
+indexes <- arrayInd(which(residuals_down > 100), dim(residuals))
+rows <- indexes[, 1]
+columns <- indexes[, 1]
+unique <- unique(c(unique(rows), unique(columns)))
+length(unique)
+```
+
+Check positions with the lowest Chi-squares:
+
+```{r}
+indexes <- arrayInd(which(residuals_down < 0.009), dim(residuals))
+data.frame(pos1 = cdi[indexes[, 1], "position"], pos2 = cdi[indexes[, 2], "position"], Chi.sq = residuals_down[indexes])
+```
+
+## Cramer's V
+
+Check Cramer's V values:
+
+```{r eval=F}
+cramersV <- PairApply(responses, FUN = CramerV)
+cramersV[lower.tri(cramersV)] <- NA
+diag(cramersV) <- NA
+```
+
+```{r}
+hist(cramersV, main="Histogram of Cramer's V values", xlab= "Cramer's V")
+```
+How many items correlate higher than 0.8 with at least one item:
+
+```{r}
+indexes <- arrayInd(which(cramersV > 0.8), dim(cramersV))
+rows <- indexes[, 1]
+columns <- indexes[, 1]
+unique <- unique(c(unique(rows), unique(columns)))
+length(unique)
+```
+
+```{r}
+indexes <- arrayInd(which(cramersV > 0.8), dim(cramersV))
+data.frame(pos1 = cdi[indexes[, 1], "position"], pos2 = cdi[indexes[, 2], "position"], cramersV = cramersV[indexes])
 ```
