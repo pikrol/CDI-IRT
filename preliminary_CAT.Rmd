@@ -1,0 +1,86 @@
+---
+title: "Preliminary CAT simulation"
+author: "Piotr Król"
+date: "18 08 2021"
+output: html_document
+---
+
+```{r setup, include=F}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+A preliminary CAT simulation performed with Kachergis et al. (2021) recommended settings.
+
+```{r libraries, warning=F, message=F}
+library(mirt)
+library(mirtCAT)
+library(parallel)
+library(plyr)
+library(ggpubr)
+```
+
+```{r data loading, eval=F}
+responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
+responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
+load("Data/mod_r")
+mod <- mod_r
+rm(mod_r)
+load("Data/items_to_remove")
+responses <- responses[, -items_to_remove]
+```
+
+```{r data loading 2, include=F}
+load("Data/preliminary_CAT.RData")
+```
+
+```{r model}
+mod
+```
+
+```{r simulation, eval=F}
+#Obtain full scores
+fscores <- as.data.frame(fscores(mod, method = "MAP"))
+
+#Prepare params
+params <- as.data.frame(coef(mod, simplify = T)$items)[1:2]
+
+#Prepare mirt object
+mo <- generate.mirt_object(params, '2PL') 
+
+#Prepare cluster for faster simulation
+cl <- makeCluster(detectCores())
+
+#Make simulation
+sim_results <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.15, min_items = 25, max_items = 50))
+
+#Obtain mean test length
+tests_lengths <- laply(sim_results, function(x) length(x$items_answered))
+mean_length <- round(mean(tests_lengths), 1)
+
+#Obtain median test length
+median_length <- round(median(tests_lengths), 1)
+
+#Obtain thetas
+thetas <- laply(sim_results, function(x) x$thetas)
+
+#Get correlation of thetas with full scores
+cor <- round(cor(thetas, fscores$F1), 3)
+
+#Get mean SE
+meanSE <- round(mean(laply(sim_results, function(x) x$SE_thetas)), 3)
+
+#Get reliability
+rel <- round(1 - meanSE**2, 3)
+
+#Get number of unused items
+raw_responses <- laply(sim_results, function(x) x$raw_responses)
+items_used <- length(which(apply(raw_responses, 2, function(x) any(!is.na(x)))))
+unused <- nrow(params) - items_used
+  
+save.image("Data/preliminary_CAT.RData")
+```
+
+```{r}
+paste("Mean length:", mean_length, " Median length:", median_length, " Correlation:", cor, " Mean SE:", meanSE, " Reliability:", rel, " Unused items:", unused)
+```
+

@@ -20,6 +20,7 @@ które wrzucamy do folderu "Data".
 <br/>
 
 **Model fit** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/model_fit.html <br/>
+**Preliminary CAT simulation** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/preliminary_CAT.html <br/>
 **Fixed-length CAT simulations** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/fixed_length_CAT.html <br/>
 **Early-stopping CAT simulations** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/early_stop_CAT.html <br/>
 
