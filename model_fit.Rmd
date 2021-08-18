@@ -1,7 +1,7 @@
 ---
 title: "Model fit"
 author: "Piotr Król"
-date: "16 08 2021"
+date: "18 08 2021"
 output: html_document
 ---
 
@@ -11,14 +11,16 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 
 Content:
 
-* Items fit
-* Local dependence
-  + Residuals
-  + Cramer's V
+* Full model
+  + Items fit
+  + Local dependence
+* Restricted model
+  + Items fit
+  + Local dependence
 
 ```{r libraries, warning=FALSE, message=FALSE}
 library(mirt)
-library(DescTools) #For Cramer's V calculation
+library(DescTools) #For normal Cramer's V calculation
 ```
 
 Load already prepared data:
@@ -27,17 +29,30 @@ Load already prepared data:
 responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
 responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
 cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
-load("Data/mod")
 ```
 
-```{r data loading 2, include=F}
+Speed up some computations:
+
+```{r eval=F}
+mirtCluster()
+```
+
+```{r ready report data, include=F}
 load("Data/model_fit.RData")
+```
+
+# Full model
+
+```{r eval=F, include=F}
+mod <- mirt(data = responses, model = 1, SE = TRUE, quadpts = 601, technical = list(NCYCLES = 10000))
+save(mod, file="Data/mod")
 ```
 
 ```{r}
 mod
 ```
-# Items fit
+
+## Items fit
 
 ```{r eval=F}
 itemfit <- itemfit(mod, method = "MAP") #Use default S_X2 statistic and MAP ability estimation
@@ -77,9 +92,9 @@ cdi[row.names(itemfit[itemfit$p.S_X2 < 0.001, ]), ]
 hist(itemfit$RMSEA.S_X2)
 ```
 
-# Local dependence
+## Local dependence
 
-## Residuals 
+### Residuals 
 
 "By default, residuals() computes the local dependence (LD)
 pairwise statistic between each pair of items, which is very similar to a signed 2 value (Chen
@@ -88,8 +103,10 @@ above the diagonal to aid in interpretation when items contain more than two res
 and hence more degrees of freedom" ~ mirt documentation
 
 ```{r eval=F}
-mirtCluster()
 residuals <- residuals(mod)
+```
+
+```{r}
 residuals_up <- residuals
 residuals_down <- residuals
 residuals_up[lower.tri(residuals_up)] <- NA
@@ -145,9 +162,9 @@ indexes <- arrayInd(which(residuals_down < 0.009), dim(residuals))
 data.frame(pos1 = cdi[indexes[, 1], "position"], pos2 = cdi[indexes[, 2], "position"], Chi.sq = residuals_down[indexes])
 ```
 
-## Cramer's V
+### Normal Cramer's V
 
-Check Cramer's V values:
+Check normal Cramer's V values:
 
 ```{r eval=F}
 cramersV <- PairApply(responses, FUN = CramerV)
@@ -171,4 +188,62 @@ length(unique)
 ```{r}
 indexes <- arrayInd(which(cramersV > 0.8), dim(cramersV))
 data.frame(pos1 = cdi[indexes[, 1], "position"], pos2 = cdi[indexes[, 2], "position"], cramersV = cramersV[indexes])
+```
+
+# Restricted model
+
+```{r}
+items_to_remove <- as.numeric(row.names(itemfit[itemfit$p.S_X2 < 0.001, ]))
+items_to_remove
+```
+
+```{r eval=F, include=F}
+save(items_to_remove, file="Data/items_to_remove")
+```
+
+Model created on restricted set of items:
+
+```{r eval=F, include=F}
+mod_r <- mirt(data = responses[, -c(392, 417, 652)], model = 1, SE = TRUE, quadpts = 601, technical = list(NCYCLES = 10000))
+save(mod_r, file="Data/mod_r")
+```
+```{r}
+mod_r
+```
+## Items fit
+
+```{r eval=F}
+itemfit_r <- itemfit(mod_r, method = "MAP")
+```
+
+Check if there are any misfits for p < 0.001:
+
+```{r}
+length(which(itemfit_r$p.S_X2 < 0.001))
+```
+```{r}
+cdi[row.names(itemfit_r[itemfit_r$p.S_X2 < 0.001, ]), ]
+```
+```{r}
+itemfit_r[itemfit_r$p.S_X2 < 0.001, ]
+```
+## Local dependence
+
+```{r eval=F}
+residuals_r <- residuals(mod_r)
+```
+
+```{r}
+residuals_up <- residuals_r
+residuals_down <- residuals_r
+residuals_up[lower.tri(residuals_up)] <- NA
+residuals_down[upper.tri(residuals_down)] <- NA
+```
+
+```{r}
+hist(residuals_up, main="Histogram of signed Cramer's V coefficients", xlab= "Cramers V")
+```
+
+```{r}
+summary(as.vector(residuals_up))
 ```
