@@ -1,8 +1,4 @@
-#Set proper current working directory
-library(rstudioapi)
-setwd(dirname(getActiveDocumentContext()$path))
-
-#Read data
+#Read data (accesible on https://drive.google.com/file/d/1i4YupJCfE6qt1iZ9A6iqZaxXv71gZ_JV/view)
 data <- read.csv("Data/irmik_lex.csv", encoding = "UTF-8")
 
 #Count age in days

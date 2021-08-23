@@ -1,7 +1,7 @@
 ---
 title: "Model fit"
 author: "Piotr Król"
-date: "18 08 2021"
+date: "23 08 2021"
 output: html_document
 ---
 
@@ -11,19 +11,18 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 
 Content:
 
-* Full model
+* Full pool (670 items) model
   + Items fit
   + Local dependence
-* Restricted model
-  + Items fit
-  + Local dependence
+* Cramer's V for responses matrix
+* Restricted pool (667 items) model
 
 ```{r libraries, warning=FALSE, message=FALSE}
 library(mirt)
-library(DescTools) #For normal Cramer's V calculation
+library(DescTools) #For classical Cramer's V calculation
 ```
 
-Load already prepared data:
+Load already prepared data (data_preparation.R) :
 
 ```{r data loading, eval=F}
 responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
@@ -41,11 +40,26 @@ mirtCluster()
 load("Data/model_fit.RData")
 ```
 
-# Full model
+Table of log-likelihoods and quadratures (cycles increased properly to reach convergence):
 
-```{r eval=F, include=F}
+| Quadratures | LogLik      |
+|-------------|-------------|
+| 15          | -472591.2   | 
+| 61          | -463630.5   | 
+| 151         | -462896.9   | 
+| 301         | -462860.8   | 
+| 451         | -462860.681 | 
+| 601         | -462860.656 | 
+
+Based on 3rd report - "Quadratures" from 28.06.2021
+
+# Full pool (670 items) model
+
+Create model:
+
+```{r eval=F}
 mod <- mirt(data = responses, model = 1, SE = TRUE, quadpts = 601, technical = list(NCYCLES = 10000))
-save(mod, file="Data/mod")
+save(mod, file = "Data/mod")
 ```
 
 ```{r}
@@ -114,7 +128,7 @@ residuals_down[upper.tri(residuals_down)] <- NA
 ```
 
 ```{r}
-hist(residuals_up, main="Histogram of signed Cramer's V coefficients", xlab= "Cramers V")
+hist(residuals_up, main="Histogram of signed Cramer's V coefficients", xlab= "Cramer's V")
 ```
 ```{r}
 summary(as.vector(residuals_up))
@@ -132,20 +146,22 @@ indexes <- arrayInd(which(residuals_up < -0.14), dim(residuals))
 data.frame(pos1 = cdi[indexes[, 1], "position"], pos2 = cdi[indexes[, 2], "position"], CramersV = residuals_up[indexes])
 ```
 
+Check LD statistic:
+
 ```{r}
-hist(residuals_down, main="Histogram of Chi-squares", xlab= "Chi-square")
+hist(residuals_down, main="Histogram of LD", xlab= "LD")
 ```
 ```{r}
 summary(as.vector(residuals_down))
 ```
-Check positions with the highest Chi-squares:
+Check positions with the highest LD:
 
 ```{r}
 indexes <- arrayInd(which(residuals_down > 200), dim(residuals))
 data.frame(pos1 = cdi[indexes[, 1], "position"], pos2 = cdi[indexes[, 2], "position"], Chi.sq = residuals_down[indexes])
 ```
 
-How many items have Chi.sq > 100 with at least one item:
+How many items have LD > 100 with at least one item:
 
 ```{r}
 indexes <- arrayInd(which(residuals_down > 100), dim(residuals))
@@ -155,16 +171,16 @@ unique <- unique(c(unique(rows), unique(columns)))
 length(unique)
 ```
 
-Check positions with the lowest Chi-squares:
+Check positions with the lowest LD:
 
 ```{r}
 indexes <- arrayInd(which(residuals_down < 0.009), dim(residuals))
 data.frame(pos1 = cdi[indexes[, 1], "position"], pos2 = cdi[indexes[, 2], "position"], Chi.sq = residuals_down[indexes])
 ```
 
-### Normal Cramer's V
+# Cramer's V for responses matrix
 
-Check normal Cramer's V values:
+Check classical Cramer's V values:
 
 ```{r eval=F}
 cramersV <- PairApply(responses, FUN = CramerV)
@@ -175,7 +191,7 @@ diag(cramersV) <- NA
 ```{r}
 hist(cramersV, main="Histogram of Cramer's V values", xlab= "Cramer's V")
 ```
-How many items correlate higher than 0.8 with at least one item:
+How many items correlate higher than 0.8 with at least one other item:
 
 ```{r}
 indexes <- arrayInd(which(cramersV > 0.8), dim(cramersV))
@@ -185,65 +201,30 @@ unique <- unique(c(unique(rows), unique(columns)))
 length(unique)
 ```
 
+What are these items:
+
 ```{r}
 indexes <- arrayInd(which(cramersV > 0.8), dim(cramersV))
 data.frame(pos1 = cdi[indexes[, 1], "position"], pos2 = cdi[indexes[, 2], "position"], cramersV = cramersV[indexes])
 ```
 
-# Restricted model
+# Restricted pool (667 items) model
 
-```{r}
+Create model on a restricted set of items (remove items marked as misfits for p < 0.001):
+
+```{r eval=F}
 items_to_remove <- as.numeric(row.names(itemfit[itemfit$p.S_X2 < 0.001, ]))
-items_to_remove
-```
-
-```{r eval=F, include=F}
 save(items_to_remove, file="Data/items_to_remove")
 ```
 
-Model created on restricted set of items:
+```{r}
+items_to_remove
+```
 
-```{r eval=F, include=F}
+```{r eval=F}
 mod_r <- mirt(data = responses[, -c(392, 417, 652)], model = 1, SE = TRUE, quadpts = 601, technical = list(NCYCLES = 10000))
 save(mod_r, file="Data/mod_r")
 ```
 ```{r}
 mod_r
-```
-## Items fit
-
-```{r eval=F}
-itemfit_r <- itemfit(mod_r, method = "MAP")
-```
-
-Check if there are any misfits for p < 0.001:
-
-```{r}
-length(which(itemfit_r$p.S_X2 < 0.001))
-```
-```{r}
-cdi[row.names(itemfit_r[itemfit_r$p.S_X2 < 0.001, ]), ]
-```
-```{r}
-itemfit_r[itemfit_r$p.S_X2 < 0.001, ]
-```
-## Local dependence
-
-```{r eval=F}
-residuals_r <- residuals(mod_r)
-```
-
-```{r}
-residuals_up <- residuals_r
-residuals_down <- residuals_r
-residuals_up[lower.tri(residuals_up)] <- NA
-residuals_down[upper.tri(residuals_down)] <- NA
-```
-
-```{r}
-hist(residuals_up, main="Histogram of signed Cramer's V coefficients", xlab= "Cramers V")
-```
-
-```{r}
-summary(as.vector(residuals_up))
 ```
