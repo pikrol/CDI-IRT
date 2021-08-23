@@ -1,11 +1,8 @@
 Data/*
-Results/*
 .Rhistory
-TODO.txt
 .DS_Store
 .Rproj.user
 *.Rproj
 .RData
-empty.Rmd
-7_english_data.Rmd
+TODO.txt
 
