@@ -1,0 +1,186 @@
+---
+title: "Item pool"
+author: "Piotr Król"
+date: "23 08 2021"
+output: html_document
+---
+
+```{r setup, include=F}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+Content:
+
+* Preliminary CAT simulation
+* Items preselection
+* Simulation with restricted pool
+
+```{r libraries, warning=F, message=F}
+library(mirt)
+library(mirtCAT)
+library(parallel)
+library(plyr)
+library(ggpubr)
+library(CTT)
+```
+
+Prepare data:
+
+```{r data loading, eval=F}
+responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
+responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
+load("Data/mod_r")
+load("Data/items_to_remove")
+responses <- responses[, -items_to_remove]
+source(paste0(getwd(),"/get_sim_results.R"))
+```
+
+```{r ready report data, include=F}
+load("Data/item_pool.RData")
+```
+
+# Preliminary CAT simulation
+
+Preliminary CAT simulation performed with Kachergis et al. (2021) recommended settings:
+
+```{r}
+mod_r #667 items model
+```
+Prepare items parameters and ability estimations from the full CDI:
+
+```{r eval = F}
+params <- as.data.frame(coef(mod_r, simplify = T)$items)[1:2]
+fscores <- as.data.frame(fscores(mod_r, method = "MAP", full.scores.SE = T))
+save(params, file = "Data/params")
+save(fscores, file = "Data/fscores")
+```
+
+Make simulation:
+
+```{r eval=F}
+cl <- makeCluster(detectCores())
+preliminary_CAT <- mirtCAT(mo = generate.mirt_object(params, '2PL') , method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.15, min_items = 25, max_items = 50))
+```
+
+```{r}
+get_sim_results(preliminary_CAT, fscores, params)
+```
+
+# Items preselection
+
+Calculate correlation of responses with age, difficulty, discrimination and distance from (0,0):
+
+```{r eval=F}
+cor <- apply(responses, 2, FUN = function(x) cor(x, responses_demo$months))
+ctt_analysis <- itemAnalysis(responses)
+ctt_params <- data.frame(dffclt = ctt_analysis$itemReport$itemMean, dscrmn = ctt_analysis$itemReport$pBis, cor = cor)
+ctt_params$dist <- sqrt(ctt_params$dscrmn^2 + ctt_params$cor^2) 
+ctt_params <- cbind(ctt_params, cdi)
+```
+
+```{r }
+head(ctt_params)
+```
+
+Select best 250 items and visualize:
+
+```{r }
+ctt_params_s <- ctt_params
+ctt_params_s[ctt_params_s$number.ws %in% ctt_params[order(ctt_params$dist, decreasing = T), ][1:250, "number.ws"], "selected"] <- "Yes"
+ctt_params_s[is.na(ctt_params_s$selected), "selected"] <- "No"
+
+ggplot(ctt_params_s, aes(cor, dscrmn, colour=selected, label=position)) +
+  geom_point(alpha = 0.3) +
+  xlab("Correlation of age with item responses") +
+  ylab("Discrimination") +
+  labs(colour = "Selected") +
+  scale_color_manual(values = c("Black", "Green")) + 
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "grey"),
+  legend.position = "top"
+)
+```
+Check how many of items used in preliminary CAT simulation are in selected 250 items:
+
+```{r}
+table(as.vector(which(apply(laply(preliminary_CAT, function(x) x$raw_responses), 2, function(x) any(!is.na(x))))) %in% ctt_params_s[ctt_params_s$selected == "Yes", "number.ws"] )
+```
+# Simulation with restricted pool
+
+Create model using only selected items:
+
+```{r eval=F}
+mod_r250_1 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE)
+```
+
+```{r}
+mod_r250_1
+```
+
+Try increase quadratures:
+
+```{r eval=F}
+mod_r250_2 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE, quadpts = 101)
+```
+```{r}
+mod_r250_2
+```
+
+Increase quadratures once more:
+
+```{r eval=F}
+mod_r250_3 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE, quadpts = 151, technical = list(NCYCLES = 10000))
+```
+```{r}
+mod_r250_3
+```
+
+And once more:
+
+```{r eval=F}
+mod_r250_4 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE, quadpts = 301, technical = list(NCYCLES = 10000))
+```
+```{r}
+mod_r250_4
+```
+
+Sice difference in Log-Lik is minimal I select mod_r250_4 for further analysis:
+
+```{r}
+mod <- mod_r250_4
+mod
+```
+Check items fit:
+
+```{r eval=F}
+itemfit <- itemfit(mod_r250_4 , method = "MAP")
+```
+
+```{r}
+length(which(itemfit$p.S_X2 < 0.001))
+```
+Check LD:
+
+```{r eval=F}
+residuals <- residuals(mod_r250_4 )
+residuals[lower.tri(residuals)] <- NA
+```
+
+```{r}
+hist(residuals, main="Histogram of signed Cramer's V coefficients", xlab= "Cramers V")
+```
+
+```{r}
+summary(as.vector(residuals))
+```
+
+Make simulation with Kachergis et al. (2021) recommended settings on a restricted model:
+
+```{r eval=F}
+params_r250 <- as.data.frame(coef(mod_r250_4 , simplify = T)$items)[1:2]
+preliminary_CAT_r250 <- mirtCAT(mo = generate.mirt_object(params_r250, '2PL'), method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], cl = cl, design = list(min_SEM = 0.15, min_items = 25, max_items = 50))
+```
+```{r}
+get_sim_results(preliminary_CAT_r250, fscores, params_r250)
+```

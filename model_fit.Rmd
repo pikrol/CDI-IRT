@@ -30,14 +30,14 @@ responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
 cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
 ```
 
+```{r ready report data, include=F}
+load("Data/model_fit.RData")
+```
+
 Speed up some computations:
 
 ```{r eval=F}
 mirtCluster()
-```
-
-```{r ready report data, include=F}
-load("Data/model_fit.RData")
 ```
 
 Table of log-likelihoods and quadratures (cycles increased properly to reach convergence):
