@@ -7,8 +7,6 @@
 **Fixed-length CAT simulations** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/fixed_length_CAT.html <br/>
 **Early-stopping CAT simulations** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/early_stop_CAT.html <br/>
 
----
-
 ## Reports:
 
 **Report 1 - 12.06.2021 - ltm vs. mirt** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/1_ltm_vs_mirt.html <br/>

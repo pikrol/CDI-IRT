@@ -1,0 +1,192 @@
+---
+title: "Items preselection"
+author: "Piotr Król"
+date: "11 08 2021"
+output: html_document
+---
+
+```{r setup, include=F}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+```{r libraries, warning=F, message=F}
+library(mirt)
+library(ggpubr)
+library(plyr)
+library(CTT)
+```
+
+```{r data loading, eval=F}
+responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
+responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
+cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
+```
+
+```{r data loading 2, include=F}
+load("Data/items_preselection.RData")
+```
+
+Calculate correlation of responses with age, CTT parameters and distance from (0,0):
+
+```{r ctt calc, eval=F}
+cor <- apply(responses, 2, FUN = function(x) cor(x, responses_demo$months))
+ctt_analysis <- itemAnalysis(responses)
+ctt_params <- data.frame(dffclt = ctt_analysis$itemReport$itemMean, dscrmn = ctt_analysis$itemReport$pBis, cor = cor)
+ctt_params$dist <- sqrt(ctt_params$dscrmn^2 + ctt_params$cor^2) 
+ctt_params <- cbind(ctt_params, cdi)
+save.image("Data/items_preselection.RData")
+```
+
+```{r ctt}
+head(ctt_params)
+```
+
+Select best 250 items and visualize:
+
+```{r selection}
+ctt_params_s <- ctt_params
+ctt_params_s[ctt_params_s$number.ws %in% ctt_params[order(ctt_params$dist, decreasing = T), ][1:250, "number.ws"], "selected"] <- "Yes"
+ctt_params_s[is.na(ctt_params_s$selected), "selected"] <- "No"
+
+ggplot(ctt_params_s, aes(cor, dscrmn, colour=selected, label=position)) +
+  geom_point(alpha = 0.3) +
+  xlab("Correlation of age with item responses") +
+  ylab("Discrimination") +
+  labs(colour = "Selected") +
+  scale_color_manual(values = c("Black", "Green")) + 
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "grey"),
+  legend.position = "top"
+)
+```
+Create model using only best items:
+
+```{r eval=F}
+mod_250 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE)
+```
+
+```{r}
+mod_250
+```
+Try increase quadratures:
+
+```{r eval=F}
+mod_250_iq <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE, quadpts = 101)
+```
+```{r}
+mod_250_iq
+```
+Increase quadratures once more:
+
+```{r eval=F}
+mod_250_iq2 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE, quadpts = 151, technical = list(NCYCLES = 10000))
+```
+```{r}
+mod_250_iq2
+```
+
+...and once more:
+
+```{r eval=F}
+mod_250_iq3 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE, quadpts = 301, technical = list(NCYCLES = 10000))
+```
+Sice difference in Log-Lik is minimal I select mod_250_iq3 for further analysis:
+
+```{r}
+mod <- mod_250_iq3
+mod
+```
+Check items fit:
+
+```{r eval=F}
+itemfit <- itemfit(mod, method = "MAP")
+```
+
+```{r}
+length(which(itemfit$p.S_X2 < 0.001))
+```
+Check LD:
+
+```{r eval=F}
+residuals <- residuals(mod)
+residuals[lower.tri(residuals)] <- NA
+```
+
+```{r}
+hist(residuals, main="Histogram of signed Cramer's V coefficients", xlab= "Cramers V")
+```
+
+```{r}
+summary(as.vector(residuals))
+```
+
+Make simulation with Kachergis et al. (2021) recommended settings:
+
+```{r simulation, eval=F}
+#Obtain full scores
+fscores <- as.data.frame(fscores(mod, method = "MAP"))
+
+#Prepare params
+params <- as.data.frame(coef(mod, simplify = T)$items)[1:2]
+
+#Prepare mirt object
+mo <- generate.mirt_object(params, '2PL') 
+
+#Prepare cluster for faster simulation
+cl <- makeCluster(detectCores())
+
+#Make simulation
+sim_results <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], cl = cl, design = list(min_SEM = 0.15, min_items = 25, max_items = 50))
+
+#Obtain mean test length
+tests_lengths <- laply(sim_results, function(x) length(x$items_answered))
+mean_length <- round(mean(tests_lengths), 1)
+
+#Obtain median test length
+median_length <- round(median(tests_lengths), 1)
+
+#Obtain thetas
+thetas <- laply(sim_results, function(x) x$thetas)
+
+#Get correlation of thetas with full scores
+cor <- round(cor(thetas, fscores$F1), 3)
+
+#Get mean SE
+meanSE <- round(mean(laply(sim_results, function(x) x$SE_thetas)), 3)
+
+#Get reliability
+rel <- round(1 - meanSE**2, 3)
+
+#Get number of unused items
+raw_responses <- laply(sim_results, function(x) x$raw_responses)
+items_used_nr <- length(which(apply(raw_responses, 2, function(x) any(!is.na(x)))))
+unused <- nrow(params) - items_used_nr
+```
+
+```{r}
+paste("Mean length:", mean_length, " Median length:", median_length, " Correlation:", cor, " Mean SE:", meanSE, " Reliability:", rel, " Unused items:", unused)
+```
+```{r eval=F}
+load("Data/mod_r")
+fscores_full <- as.data.frame(fscores(mod_r, method = "MAP"))
+```
+Check correlation with fscores from full model:
+
+```{r}
+cor(thetas, fscores_full)
+```
+
+Check correlation of fscores from full and restricted model:
+
+```{r}
+cor(fscores, fscores_full)
+```
+
+Check how many of items used in preliminary CAT simulation are in currently selected 250 items:
+
+```{r}
+load("Data/preliminaryCAT_items_used")
+table(preliminaryCAT_items_used %in% ctt_params_s[ctt_params_s$selected == "Yes", "number.ws"] )
+```
+

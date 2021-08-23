@@ -20,7 +20,9 @@ library(ggpubr)
 ```{r data loading, eval=F}
 responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
 responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
-load("Data/mod")
+load("Data/mod_r")
+load("Data/items_to_remove")
+responses <- responses[, -items_to_remove]
 ```
 
 ```{r data loading 2, include=F}
@@ -28,12 +30,13 @@ load("Data/fixed_length_CAT.RData")
 ```
 
 ```{r model}
+mod <- mod_r
 mod
 ```
 Prepare full scores, params and mirt object for simulations:
 
 ```{r preparation, eval=F}
-fscores <- as.data.frame(fscores(mod, method = "MAP", full.scores.SE = T)) #Obtain full scores
+fscores <- as.data.frame(fscores(mod, method = "MAP")) #Obtain full scores
 params <- as.data.frame(coef(mod, simplify = T)$items)[1:2] #Prepare params
 mo <- generate.mirt_object(params, '2PL') #Prepare mirt object
 ```
@@ -48,7 +51,7 @@ cl <- makeCluster(detectCores()) #Speeds up simulations - computation in paralle
 for (n in lengths){
   
   #Make simulation
-  sim_results <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_items = n, max_items = n))
+  sim_results <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses[, -items_to_remove], cl = cl, design = list(min_items = n, max_items = n))
   
   #Obtain thetas
   thetas <- laply(sim_results, function(x) x$thetas)

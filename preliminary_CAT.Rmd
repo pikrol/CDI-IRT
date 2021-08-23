@@ -74,13 +74,18 @@ rel <- round(1 - meanSE**2, 3)
 
 #Get number of unused items
 raw_responses <- laply(sim_results, function(x) x$raw_responses)
-items_used <- length(which(apply(raw_responses, 2, function(x) any(!is.na(x)))))
-unused <- nrow(params) - items_used
+items_used_nr <- length(which(apply(raw_responses, 2, function(x) any(!is.na(x)))))
+unused <- nrow(params) - items_used_nr
   
 save.image("Data/preliminary_CAT.RData")
 ```
 
 ```{r}
 paste("Mean length:", mean_length, " Median length:", median_length, " Correlation:", cor, " Mean SE:", meanSE, " Reliability:", rel, " Unused items:", unused)
+```
+
+```{r eval=F, include=F}
+preliminaryCAT_items_used <- as.vector(which(apply(raw_responses, 2, function(x) any(!is.na(x)))))
+save(preliminaryCAT_items_used, file="Data/preliminaryCAT_items_used")
 ```
 

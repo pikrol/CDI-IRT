@@ -1,0 +1,362 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Early-stopping CAT simulations},
+  pdfauthor={Piotr Król},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifluatex
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\title{Early-stopping CAT simulations}
+\author{Piotr Król}
+\date{09 08 2021}
+
+\begin{document}
+\maketitle
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(ltm)}
+\FunctionTok{library}\NormalTok{(mirt)}
+\FunctionTok{library}\NormalTok{(mirtCAT)}
+\FunctionTok{library}\NormalTok{(parallel)}
+\FunctionTok{library}\NormalTok{(plyr)}
+\FunctionTok{library}\NormalTok{(ggpubr)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{responses\_demo }\OtherTok{\textless{}{-}} \FunctionTok{read.csv}\NormalTok{(}\StringTok{"Data/responses\_demo.csv"}\NormalTok{, }\AttributeTok{encoding =} \StringTok{"UTF{-}8"}\NormalTok{)}
+\NormalTok{responses }\OtherTok{\textless{}{-}} \FunctionTok{as.matrix}\NormalTok{(responses\_demo[,}\DecValTok{5}\SpecialCharTok{:}\FunctionTok{ncol}\NormalTok{(responses\_demo)])}
+\FunctionTok{load}\NormalTok{(}\StringTok{"Data/mod\_r"}\NormalTok{)}
+\FunctionTok{load}\NormalTok{(}\StringTok{"Data/items\_to\_remove"}\NormalTok{)}
+\NormalTok{responses }\OtherTok{\textless{}{-}}\NormalTok{ responses[, }\SpecialCharTok{{-}}\NormalTok{items\_to\_remove]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{mod }\OtherTok{\textless{}{-}}\NormalTok{ mod\_r}
+\NormalTok{mod}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## mirt(data = responses[, -c(392, 417, 652)], model = 1, SE = TRUE, 
+##     quadpts = 601, technical = list(NCYCLES = 10000))
+## 
+## Full-information item factor analysis with 1 factor(s).
+## Converged within 1e-04 tolerance after 2700 EM iterations.
+## mirt version: 1.34 
+## M-step optimizer: BFGS 
+## EM acceleration: Ramsay 
+## Number of rectangular quadrature: 601
+## Latent density type: Gaussian 
+## 
+## Information matrix estimated with method: Oakes
+## Second-order test: model is a possible local maximum
+## Condition number of information matrix =  2311.374
+## 
+## Log-likelihood = -460055
+## Estimated parameters: 1334 
+## AIC = 922778.1; AICc = 926480.5
+## BIC = 930434.4; SABIC = 926196
+## G2 (9999998666) = 885020.2, p = 1
+## RMSEA = 0, CFI = NaN, TLI = NaN
+\end{verbatim}
+
+Calculate Cronbach's alpha for responses:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{cronbach.alpha}\NormalTok{(responses)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Cronbach's alpha for the 'responses' data-set
+## 
+## Items: 667
+## Sample units: 2297
+## alpha: 0.999
+\end{verbatim}
+
+Prepare full scores, params and mirt object for simulations:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{fscores }\OtherTok{\textless{}{-}} \FunctionTok{as.data.frame}\NormalTok{(}\FunctionTok{fscores}\NormalTok{(mod, }\AttributeTok{method =} \StringTok{"MAP"}\NormalTok{, }\AttributeTok{full.scores.SE =}\NormalTok{ T)) }\CommentTok{\#Obtain full scores}
+\NormalTok{params }\OtherTok{\textless{}{-}} \FunctionTok{as.data.frame}\NormalTok{(}\FunctionTok{coef}\NormalTok{(mod, }\AttributeTok{simplify =}\NormalTok{ T)}\SpecialCharTok{$}\NormalTok{items)[}\DecValTok{1}\SpecialCharTok{:}\DecValTok{2}\NormalTok{] }\CommentTok{\#Prepare params}
+\NormalTok{mo }\OtherTok{\textless{}{-}} \FunctionTok{generate.mirt\_object}\NormalTok{(params, }\StringTok{\textquotesingle{}2PL\textquotesingle{}}\NormalTok{) }\CommentTok{\#Prepare mirt object}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ggplot}\NormalTok{(fscores, }\FunctionTok{aes}\NormalTok{(F1, SE\_F1)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}\AttributeTok{alpha =} \FloatTok{0.3}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{xlab}\NormalTok{(}\StringTok{"Ability level (Θ)"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{ylab}\NormalTok{(}\StringTok{"Standard error"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+  \AttributeTok{panel.background =} \FunctionTok{element\_rect}\NormalTok{(}\AttributeTok{fill =} \ConstantTok{NA}\NormalTok{),}
+  \AttributeTok{panel.grid.major =} \FunctionTok{element\_line}\NormalTok{(}\AttributeTok{colour =} \StringTok{"lightgrey"}\NormalTok{)}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{early_stop_CAT_files/figure-latex/unnamed-chunk-2-1} \end{center}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(fscores}\SpecialCharTok{$}\NormalTok{SE\_F1)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+## 0.02181 0.02500 0.03427 0.06199 0.06391 0.45343
+\end{verbatim}
+
+Make early-stopping simulation with desired SE = 0.1:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#Prepare cluster for faster simulation}
+\NormalTok{cl }\OtherTok{\textless{}{-}} \FunctionTok{makeCluster}\NormalTok{(}\FunctionTok{detectCores}\NormalTok{())}
+
+\CommentTok{\#Make simulation}
+\NormalTok{results\_SE1 }\OtherTok{\textless{}{-}} \FunctionTok{mirtCAT}\NormalTok{(}\AttributeTok{mo =}\NormalTok{ mo, }\AttributeTok{method =} \StringTok{"MAP"}\NormalTok{, }\AttributeTok{criteria =} \StringTok{"MI"}\NormalTok{, }\AttributeTok{start\_item =} \StringTok{"MI"}\NormalTok{, }\AttributeTok{local\_pattern =}\NormalTok{ responses, }\AttributeTok{cl =}\NormalTok{ cl, }\AttributeTok{design =} \FunctionTok{list}\NormalTok{(}\AttributeTok{min\_SEM =} \FloatTok{0.1}\NormalTok{))}
+\FunctionTok{save.image}\NormalTok{(}\StringTok{"Data/early\_stop\_CAT.RData"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{sim\_results }\OtherTok{\textless{}{-}}\NormalTok{ results\_SE1}
+
+\CommentTok{\#Obtain mean test length}
+\NormalTok{tests\_lengths }\OtherTok{\textless{}{-}} \FunctionTok{laply}\NormalTok{(sim\_results, }\ControlFlowTok{function}\NormalTok{(x) }\FunctionTok{length}\NormalTok{(x}\SpecialCharTok{$}\NormalTok{items\_answered))}
+\NormalTok{mean\_length }\OtherTok{\textless{}{-}} \FunctionTok{round}\NormalTok{(}\FunctionTok{mean}\NormalTok{(tests\_lengths), }\DecValTok{1}\NormalTok{)}
+
+\CommentTok{\#Obtain median test length}
+\NormalTok{median\_length }\OtherTok{\textless{}{-}} \FunctionTok{round}\NormalTok{(}\FunctionTok{median}\NormalTok{(tests\_lengths), }\DecValTok{1}\NormalTok{)}
+
+\CommentTok{\#Obtain thetas}
+\NormalTok{thetas }\OtherTok{\textless{}{-}} \FunctionTok{laply}\NormalTok{(sim\_results, }\ControlFlowTok{function}\NormalTok{(x) x}\SpecialCharTok{$}\NormalTok{thetas)}
+
+\CommentTok{\#Get correlation of thetas with full scores}
+\NormalTok{cor }\OtherTok{\textless{}{-}} \FunctionTok{round}\NormalTok{(}\FunctionTok{cor}\NormalTok{(thetas, fscores}\SpecialCharTok{$}\NormalTok{F1), }\DecValTok{3}\NormalTok{)}
+
+\CommentTok{\#Get mean SE}
+\NormalTok{meanSE }\OtherTok{\textless{}{-}} \FunctionTok{round}\NormalTok{(}\FunctionTok{mean}\NormalTok{(}\FunctionTok{laply}\NormalTok{(sim\_results, }\ControlFlowTok{function}\NormalTok{(x) x}\SpecialCharTok{$}\NormalTok{SE\_thetas)), }\DecValTok{3}\NormalTok{)}
+
+\CommentTok{\#Get reliability}
+\NormalTok{rel }\OtherTok{\textless{}{-}} \FunctionTok{round}\NormalTok{(}\DecValTok{1} \SpecialCharTok{{-}}\NormalTok{ meanSE}\SpecialCharTok{**}\DecValTok{2}\NormalTok{, }\DecValTok{3}\NormalTok{)}
+
+\CommentTok{\#Get number of unused items}
+\NormalTok{raw\_responses }\OtherTok{\textless{}{-}} \FunctionTok{laply}\NormalTok{(sim\_results, }\ControlFlowTok{function}\NormalTok{(x) x}\SpecialCharTok{$}\NormalTok{raw\_responses)}
+\NormalTok{items\_used }\OtherTok{\textless{}{-}} \FunctionTok{length}\NormalTok{(}\FunctionTok{which}\NormalTok{(}\FunctionTok{apply}\NormalTok{(raw\_responses, }\DecValTok{2}\NormalTok{, }\ControlFlowTok{function}\NormalTok{(x) }\FunctionTok{any}\NormalTok{(}\SpecialCharTok{!}\FunctionTok{is.na}\NormalTok{(x)))))}
+\NormalTok{unused }\OtherTok{\textless{}{-}} \FunctionTok{nrow}\NormalTok{(params) }\SpecialCharTok{{-}}\NormalTok{ items\_used}
+
+\FunctionTok{paste}\NormalTok{(}\StringTok{"Mean length:"}\NormalTok{, mean\_length, }\StringTok{" Median length:"}\NormalTok{, median\_length, }\StringTok{" Correlation:"}\NormalTok{, cor, }\StringTok{" Mean SE:"}\NormalTok{, meanSE, }\StringTok{" Reliability:"}\NormalTok{, rel, }\StringTok{" Unused:"}\NormalTok{, unused)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "Mean length: 126.4  Median length: 23  Correlation: 0.99  Mean SE: 0.113  Reliability: 0.987  Unused: 0"
+\end{verbatim}
+
+Plot distribution of tests lengths:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#Prepare cuts}
+\NormalTok{cuts }\OtherTok{\textless{}{-}} \FunctionTok{cut}\NormalTok{(tests\_lengths, }\AttributeTok{breaks =} \FunctionTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{5}\NormalTok{, }\DecValTok{10}\NormalTok{, }\DecValTok{15}\NormalTok{, }\DecValTok{25}\NormalTok{, }\DecValTok{35}\NormalTok{, }\DecValTok{50}\NormalTok{, }\DecValTok{75}\NormalTok{, }\DecValTok{100}\NormalTok{, }\DecValTok{666}\NormalTok{, }\DecValTok{667}\NormalTok{), }\AttributeTok{labels =} \FunctionTok{c}\NormalTok{(}\StringTok{"1 {-} 5"}\NormalTok{, }\StringTok{"6 {-} 10"}\NormalTok{, }\StringTok{"11 {-} 15"}\NormalTok{, }\StringTok{"16 {-} 25"}\NormalTok{, }\StringTok{"26 {-} 35"}\NormalTok{, }\StringTok{"36 {-} 50"}\NormalTok{, }\StringTok{"51 {-} 75"}\NormalTok{, }\StringTok{"76 {-} 100"}\NormalTok{, }\StringTok{"101 {-} 666"}\NormalTok{, }\StringTok{"667"}\NormalTok{))}
+
+\CommentTok{\#Plot}
+\FunctionTok{ggplot}\NormalTok{(}\FunctionTok{data.frame}\NormalTok{(}\FunctionTok{round}\NormalTok{(}\FunctionTok{table}\NormalTok{(cuts) }\SpecialCharTok{/} \FunctionTok{nrow}\NormalTok{(responses) }\SpecialCharTok{*} \DecValTok{100}\NormalTok{, }\DecValTok{1}\NormalTok{)), }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ cuts, }\AttributeTok{y =}\NormalTok{ Freq)) }\SpecialCharTok{+}
+  \FunctionTok{xlab}\NormalTok{(}\StringTok{"Number of items administered"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{ylab}\NormalTok{(}\StringTok{"Percent of tests (\%)"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_bar}\NormalTok{(}\AttributeTok{stat =} \StringTok{"identity"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_text}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{label =}\NormalTok{ Freq), }\AttributeTok{vjust =} \SpecialCharTok{{-}}\FloatTok{0.3}\NormalTok{) }\SpecialCharTok{+} 
+  \FunctionTok{theme\_pubclean}\NormalTok{() }
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{early_stop_CAT_files/figure-latex/unnamed-chunk-5-1} \end{center}
+
+Plot theta vs.~test length:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ggplot}\NormalTok{(}\FunctionTok{data.frame}\NormalTok{(}\AttributeTok{thetas =}\NormalTok{ thetas, }\AttributeTok{lengths =}\NormalTok{ tests\_lengths), }\FunctionTok{aes}\NormalTok{(thetas, lengths)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}\AttributeTok{alpha =} \FloatTok{0.3}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{xlab}\NormalTok{(}\StringTok{"Ability level (Θ)"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{ylab}\NormalTok{(}\StringTok{"Number of items administered"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{ggtitle}\NormalTok{(}\StringTok{"Tests lengths for SE = 0.1 stop criterion"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+  \AttributeTok{panel.background =} \FunctionTok{element\_rect}\NormalTok{(}\AttributeTok{fill =} \ConstantTok{NA}\NormalTok{),}
+  \AttributeTok{panel.grid.major =} \FunctionTok{element\_line}\NormalTok{(}\AttributeTok{colour =} \StringTok{"lightgrey"}\NormalTok{)}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{early_stop_CAT_files/figure-latex/unnamed-chunk-6-1} \end{center}
+
+Make early-stopping simulation with different maximum number of items
+administered:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{lengths }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\DecValTok{5}\NormalTok{, }\DecValTok{10}\NormalTok{, }\DecValTok{15}\NormalTok{, }\DecValTok{25}\NormalTok{, }\DecValTok{35}\NormalTok{, }\DecValTok{50}\NormalTok{, }\DecValTok{75}\NormalTok{, }\DecValTok{100}\NormalTok{)}
+\NormalTok{results\_SEXX }\OtherTok{\textless{}{-}} \FunctionTok{data.frame}\NormalTok{(}\AttributeTok{mean\_length =} \ConstantTok{NA}\NormalTok{, }\AttributeTok{median\_length =} \ConstantTok{NA}\NormalTok{, }\AttributeTok{cor =} \ConstantTok{NA}\NormalTok{, }\AttributeTok{meanSE =} \ConstantTok{NA}\NormalTok{, }\AttributeTok{rel =} \ConstantTok{NA}\NormalTok{, }\AttributeTok{unused =} \ConstantTok{NA}\NormalTok{)}
+\NormalTok{cl }\OtherTok{\textless{}{-}} \FunctionTok{makeCluster}\NormalTok{(}\FunctionTok{detectCores}\NormalTok{()) }\CommentTok{\#Speeds up simulations {-} computation in parallel}
+
+\ControlFlowTok{for}\NormalTok{ (n }\ControlFlowTok{in}\NormalTok{ lengths)\{}
+  
+  \CommentTok{\#Make simulation}
+\NormalTok{  sim\_results }\OtherTok{\textless{}{-}} \FunctionTok{mirtCAT}\NormalTok{(}\AttributeTok{mo =}\NormalTok{ mo, }\AttributeTok{method =} \StringTok{"MAP"}\NormalTok{, }\AttributeTok{criteria =} \StringTok{"MI"}\NormalTok{, }\AttributeTok{start\_item =} \StringTok{"MI"}\NormalTok{, }\AttributeTok{local\_pattern =}\NormalTok{ responses, }\AttributeTok{cl =}\NormalTok{ cl, }\AttributeTok{design =} \FunctionTok{list}\NormalTok{(}\AttributeTok{min\_SEM =}\NormalTok{ XX, }\AttributeTok{max\_items =}\NormalTok{ n))}
+  
+  \CommentTok{\#Obtain mean test length}
+\NormalTok{  tests\_lengths }\OtherTok{\textless{}{-}} \FunctionTok{laply}\NormalTok{(sim\_results, }\ControlFlowTok{function}\NormalTok{(x) }\FunctionTok{length}\NormalTok{(x}\SpecialCharTok{$}\NormalTok{items\_answered))}
+\NormalTok{  mean\_length }\OtherTok{\textless{}{-}} \FunctionTok{round}\NormalTok{(}\FunctionTok{mean}\NormalTok{(tests\_lengths), }\DecValTok{1}\NormalTok{)}
+  
+  \CommentTok{\#Obtain median test length}
+\NormalTok{  median\_length }\OtherTok{\textless{}{-}} \FunctionTok{round}\NormalTok{(}\FunctionTok{median}\NormalTok{(tests\_lengths), }\DecValTok{1}\NormalTok{)}
+  
+  \CommentTok{\#Obtain thetas}
+\NormalTok{  thetas }\OtherTok{\textless{}{-}} \FunctionTok{laply}\NormalTok{(sim\_results, }\ControlFlowTok{function}\NormalTok{(x) x}\SpecialCharTok{$}\NormalTok{thetas)}
+  
+  \CommentTok{\#Get correlation of thetas with full scores}
+\NormalTok{  cor }\OtherTok{\textless{}{-}} \FunctionTok{round}\NormalTok{(}\FunctionTok{cor}\NormalTok{(thetas, fscores}\SpecialCharTok{$}\NormalTok{F1), }\DecValTok{3}\NormalTok{)}
+  
+  \CommentTok{\#Get mean SE}
+\NormalTok{  meanSE }\OtherTok{\textless{}{-}} \FunctionTok{round}\NormalTok{(}\FunctionTok{mean}\NormalTok{(}\FunctionTok{laply}\NormalTok{(sim\_results, }\ControlFlowTok{function}\NormalTok{(x) x}\SpecialCharTok{$}\NormalTok{SE\_thetas)), }\DecValTok{3}\NormalTok{)}
+  
+  \CommentTok{\#Get reliability}
+\NormalTok{  rel }\OtherTok{\textless{}{-}} \FunctionTok{round}\NormalTok{(}\DecValTok{1} \SpecialCharTok{{-}}\NormalTok{ meanSE}\SpecialCharTok{**}\DecValTok{2}\NormalTok{, }\DecValTok{3}\NormalTok{)}
+  
+  \CommentTok{\#Get number of unused items}
+\NormalTok{  raw\_responses }\OtherTok{\textless{}{-}} \FunctionTok{laply}\NormalTok{(sim\_results, }\ControlFlowTok{function}\NormalTok{(x) x}\SpecialCharTok{$}\NormalTok{raw\_responses)}
+\NormalTok{  items\_used }\OtherTok{\textless{}{-}} \FunctionTok{length}\NormalTok{(}\FunctionTok{which}\NormalTok{(}\FunctionTok{apply}\NormalTok{(raw\_responses, }\DecValTok{2}\NormalTok{, }\ControlFlowTok{function}\NormalTok{(x) }\FunctionTok{any}\NormalTok{(}\SpecialCharTok{!}\FunctionTok{is.na}\NormalTok{(x)))))}
+\NormalTok{  unused }\OtherTok{\textless{}{-}} \FunctionTok{nrow}\NormalTok{(params) }\SpecialCharTok{{-}}\NormalTok{ items\_used}
+  
+  \CommentTok{\#Update data frame with results}
+\NormalTok{  results\_SEXX }\OtherTok{\textless{}{-}} \FunctionTok{rbind}\NormalTok{(results\_SEXX, }\FunctionTok{c}\NormalTok{(mean\_length, median\_length, cor, meanSE, rel, unused))}
+  
+\NormalTok{\}}
+
+\NormalTok{results\_SEXX }\OtherTok{\textless{}{-}} \FunctionTok{na.omit}\NormalTok{(results\_SEXX)}
+\FunctionTok{row.names}\NormalTok{(results\_SEXX) }\OtherTok{\textless{}{-}}\NormalTok{ lengths}
+\FunctionTok{save.image}\NormalTok{(}\StringTok{"Data/early\_stop\_CAT.RData"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#results\_fixed\_length}
+\end{Highlighting}
+\end{Shaded}
+
+
+\end{document}

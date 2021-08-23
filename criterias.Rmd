@@ -1,0 +1,104 @@
+---
+title: "empty"
+author: "Piotr Król"
+date: "15 07 2021"
+output: html_document
+---
+
+```{r setup, include=F}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+Content:
+
+* 
+
+```{r libraries, warning=F, message=F}
+library(mirt)
+library(mirtCAT)
+```
+
+```{r data loading, eval=F}
+responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
+responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
+cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
+load("Data/mod_r")
+load("Data/items_to_remove")
+responses <- responses[, -items_to_remove]
+```
+
+```{r data loading 2, include=F}
+load("Data/criterias.RData")
+```
+
+```{r eval=F, include=F}
+mod <- mod_r
+rm(mod_r)
+```
+
+```{r model}
+mod
+```
+
+Prepare full scores, params and mirt object for simulations:
+
+```{r preparation, eval=F}
+fscores <- as.data.frame(fscores(mod, method = "MAP")) #Obtain full scores
+params <- as.data.frame(coef(mod, simplify = T)$items)[1:2] #Prepare params
+mo <- generate.mirt_object(params, '2PL') #Prepare mirt object
+```
+
+Make early-stopping simulation with different maximum number of items administered:
+
+```{r simulations, eval=F}
+criterias <- c("MI", "MEPV")
+results <- data.frame(mean_length = NA, median_length = NA, cor = NA, meanSE = NA, rel = NA, unused = NA)
+cl <- makeCluster(detectCores()) #Speeds up simulations - computation in parallel
+
+for (crit in criterias){
+  
+  #Make simulation
+  sim_results <- mirtCAT(mo = mo, method = "MAP", criteria = crit, start_item = crit, local_pattern = responses, cl = cl, design = list(min_items = 10, min_SEM = 0.1, max_items = 50))
+  
+  #Obtain mean test length
+  tests_lengths <- laply(sim_results, function(x) length(x$items_answered))
+  mean_length <- round(mean(tests_lengths), 1)
+  
+  #Obtain median test length
+  median_length <- round(median(tests_lengths), 1)
+  
+  #Obtain thetas
+  thetas <- laply(sim_results, function(x) x$thetas)
+  
+  #Get correlation of thetas with full scores
+  cor <- round(cor(thetas, fscores$F1), 3)
+  
+  #Get mean SE
+  meanSE <- round(mean(laply(sim_results, function(x) x$SE_thetas)), 3)
+  
+  #Get reliability
+  rel <- round(1 - meanSE**2, 3)
+  
+  #Get number of unused items
+  raw_responses <- laply(sim_results, function(x) x$raw_responses)
+  items_used <- length(which(apply(raw_responses, 2, function(x) any(!is.na(x)))))
+  unused <- nrow(params) - items_used
+  
+  #Update data frame with results
+  results <- rbind(results, c(mean_length, median_length, cor, meanSE, rel, unused))
+  
+}
+
+results <- na.omit(results)
+row.names(results) <- criterias
+save.image("Data/criterias.RData")
+```
+
+```{r}
+results
+```
+
+```{r}
+  sim_results <- mirtCAT(mo = mo, method = "MAP", criteria = "MEPV", start_item = "MEPV", local_pattern = responses, cl = cl, design = list(min_items = 10, max_items = 10))
+```
+
