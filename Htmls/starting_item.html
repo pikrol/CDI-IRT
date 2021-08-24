@@ -230,7 +230,8 @@ start_thetas &lt;- as.matrix(
       fscores_demo[[age_unit]],
       fscores_demo$gender
     )
-  )</code></pre>
+  )
+save(start_thetas, file = &quot;Data/start_thetas&quot;)</code></pre>
 <p>Make simulation without start thetas given:</p>
 <pre class="r"><code>mo &lt;- generate.mirt_object(params, &#39;2PL&#39;)
 cl &lt;- makeCluster(detectCores())

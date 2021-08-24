@@ -84,6 +84,7 @@ start_thetas <- as.matrix(
       fscores_demo$gender
     )
   )
+save(start_thetas, file = "Data/start_thetas")
 ```
 
 Make simulation without start thetas given:
