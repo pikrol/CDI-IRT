@@ -1,7 +1,7 @@
 ---
-title: "Items usage in CAT"
+title: "Item usage in CAT"
 author: "Piotr Król"
-date: "24 08 2021"
+date: "01 09 2021"
 output: html_document
 ---
 
