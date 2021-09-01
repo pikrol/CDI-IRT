@@ -1,0 +1,83 @@
+---
+title: "Recommended stopping rule"
+author: "Piotr Król"
+date: "01 09 2021"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=F}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+
+```{r libraries, warning=F, message=F}
+library(mirtCAT)
+library(parallel)
+library(plyr)
+library(ggpubr)
+```
+
+```{r data loading, eval=F}
+responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
+responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
+load("Data/items_to_remove")
+load("Data/params")
+load("Data/fscores")
+responses <- responses[, -items_to_remove]
+source(paste0(getwd(),"/get_sim_results.R"))
+```
+
+```{r data loading 2, include=F}
+load("Data/stopping_rule.RData")
+```
+
+Make simulation with recommended stopping rule:
+
+```{r eval=F}
+mo <- generate.mirt_object(params, '2PL')
+cl <- makeCluster(detectCores())
+results <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.1, min_items = 10, max_items = 50))
+```
+
+```{r}
+get_sim_results(results, fscores, params)
+```
+
+Ability vs. SE plot:
+
+```{r}
+thetas <- laply(results, function(x) x$thetas)
+SEs <- laply(results, function(x) x$SE_thetas)
+
+ggplot(data.frame(thetas = thetas, SEs = SEs), aes(thetas, SEs)) +
+  geom_point(alpha = 0.1) +
+  xlab("Ability level (Θ)") +
+  ylab("Standard error (SE)") +
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "lightgrey")
+)
+```
+
+Ability vs. test length plot:
+
+```{r}
+tests_lengths <- laply(results, function(x) length(x$items_answered))
+
+ggplot(data.frame(thetas = thetas, tl = tests_lengths), aes(thetas, tl)) +
+  geom_point(alpha = 0.1) +
+  xlab("Ability level (Θ)") +
+  ylab("Test length") +
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "lightgrey")
+)
+```
+
+```{r}
+round(length(which(tests_lengths == 50)) / nrow(responses), 3) * 100
+```
+
