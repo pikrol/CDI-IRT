@@ -29,9 +29,12 @@ Prepare data:
 ```{r data loading, eval=F}
 responses_demo <- read.csv("Data/responses_demo.csv", encoding = "UTF-8")
 responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
+cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
 load("Data/mod_r")
 load("Data/items_to_remove")
 responses <- responses[, -items_to_remove]
+responses_demo <- responses_demo[, -items_to_remove]
+cdi <- cdi[!cdi$number.ws %in% items_to_remove, ]
 source(paste0(getwd(),"/get_sim_results.R"))
 ```
 
@@ -51,11 +54,11 @@ Prepare items parameters and ability estimations from the full CDI:
 ```{r eval = F}
 params <- as.data.frame(coef(mod_r, simplify = T)$items)[1:2]
 fscores <- as.data.frame(fscores(mod_r, method = "MAP", full.scores.SE = T))
-save(params, file = "Data/params")
-save(fscores, file = "Data/fscores")
+# save(params, file = "Data/params")
+# save(fscores, file = "Data/fscores")
 ```
 
-Make simulation:
+Make preliminary CAT simulation:
 
 ```{r eval=F}
 cl <- makeCluster(detectCores())
@@ -71,8 +74,8 @@ get_sim_results(preliminary_CAT, fscores, params)
 Calculate correlation of responses with age, difficulty, discrimination and distance from (0,0):
 
 ```{r eval=F}
-cor <- apply(responses, 2, FUN = function(x) cor(x, responses_demo$months))
 ctt_analysis <- itemAnalysis(responses)
+cor <- apply(responses, 2, FUN = function(x) cor(x, responses_demo$months))
 ctt_params <- data.frame(dffclt = ctt_analysis$itemReport$itemMean, dscrmn = ctt_analysis$itemReport$pBis, cor = cor)
 ctt_params$dist <- sqrt(ctt_params$dscrmn^2 + ctt_params$cor^2) 
 ctt_params <- cbind(ctt_params, cdi)
@@ -106,6 +109,50 @@ Check how many of items used in preliminary CAT simulation are in selected 250 i
 ```{r}
 table(as.vector(which(apply(laply(preliminary_CAT, function(x) x$raw_responses), 2, function(x) any(!is.na(x))))) %in% ctt_params_s[ctt_params_s$selected == "Yes", "number.ws"] )
 ```
+## Second way of preselection
+
+Count difficulties in months intervals and calculate theirs correlations with ages:
+
+```{r }
+dffclts_months <- c()
+for (month in unique(responses_demo$months)){
+  responses <- responses_demo[responses_demo$months == month, ]
+  responses <- as.matrix(responses[,5:ncol(responses)])
+  ctt_analysis <- itemAnalysis(responses)
+  dffclts_months <- rbind(dffclts_months, ctt_analysis$itemReport$itemMean)
+}
+
+cor2 <- apply(dffclts_months, 2, FUN = function(x) cor(x, unique(responses_demo$months)))
+cor2[1:5]
+
+ctt_params$cor2 <- cor2
+ctt_params$dist2 <- sqrt(ctt_params$dscrmn^2 + ctt_params$cor2^2) 
+```
+
+Select best 250 items and visualize:
+
+```{r }
+ctt_params_s <- ctt_params
+ctt_params_s[ctt_params_s$number.ws %in% ctt_params[order(ctt_params$dist2, decreasing = T), ][1:250, "number.ws"], "selected"] <- "Yes"
+ctt_params_s[is.na(ctt_params_s$selected), "selected"] <- "No"
+
+ggplot(ctt_params_s, aes(cor2, dscrmn, colour=selected, label=position)) +
+  geom_point(alpha = 0.3) +
+  geom_text(aes(label=ifelse(dscrmn < 0.55 & cor2 < 0.95, as.character(position),'')), check_overlap = T) +
+  xlab("Correlation of difficulty with age") +
+  ylab("Discrimination") +
+  labs(colour = "Selected") +
+  scale_color_manual(values = c("Black", "Green")) + 
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "grey"),
+  legend.position = "top"
+)
+```
+```{r}
+table(as.vector(which(apply(laply(preliminary_CAT, function(x) x$raw_responses), 2, function(x) any(!is.na(x))))) %in% ctt_params_s[ctt_params_s$selected == "Yes", "number.ws"] )
+```
+
 # Simulation with restricted pool
 
 Create model using only selected items:
