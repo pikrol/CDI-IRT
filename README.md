@@ -8,6 +8,7 @@
 **Early-stopping CAT simulations** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/early_stop_CAT.html <br/>
 **Recommended stopping rule** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/stopping_rule.html <br/>
 **Starting item** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/starting_item.html <br/>
+**Item usage in CAT** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/item_usage.html <br/>
 
 ## Reports:
 

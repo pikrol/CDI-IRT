@@ -59,7 +59,7 @@ ggplot(params_cdi, aes(b, a, colour=category, label=position)) +
 )
 ```
 
-Make simulation with recommended settings:
+Make simulation with recommended settings and start thetas decreased by 2:
 
 ```{r eval=F}
 sim_results <- mirtCAT(
@@ -69,24 +69,66 @@ sim_results <- mirtCAT(
     start_item = "MI",
     local_pattern = responses,
     cl = makeCluster(detectCores()),
-    design = list(min_items = 10, min_SEM = 0.1, max_items = 50)
+    design = list(min_items = 10, min_SEM = 0.1, max_items = 50, thetas.start = start_thetas - 2)
   )
 ```
 
-Plot with colour by frequency:
+Check frequency of occurence of particular items:
+
+```{r}
+raw_responses <- laply(sim_results, function(x) x$raw_responses)
+freq <- apply(raw_responses, 2, function(x) length(which(!is.na(x))))/nrow(responses)*100
+params_cdi$freq <- freq
+```
+
+```{r}
+summary(freq)
+```
 
 ```{r fig.width=12, fig.height=8}
-raw_responses <- laply(sim_results, function(x) x$raw_responses)
-freq <- round(apply(raw_responses, 2, function(x) length(which(!is.na(x))))/nrow(responses), 3)*100
-params_cdi$freq <- freq
+#Prepare cuts
+cuts <- cut(freq, breaks = c(0, 0.001, 10, 20, 30, 51, 100), labels = c("0 (unused)", "0 - 10", "10 - 20", "20 - 30", "30 - 51", "93.3"), include.lowest = TRUE)
 
-ggplot(params_cdi[!params_cdi$number.ws == 457, ], aes(b, a, label=position, colour=freq)) + #Remove 'kupić' since it has 100% frequency
-  geom_text(check_overlap = T) +
+#Plot
+ggplot(data.frame(table(cuts)), aes(x = cuts, y = Freq)) +
+  xlab("Frequency of use (%)") +
+  ylab("Number of items") +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
+  theme_pubclean() +
+  theme(text = element_text(size=16))
+```
+
+```{r}
+params_cdi[order(params_cdi$freq, decreasing = T), ][1:10, ]
+```
+
+```{r eval=F, include=F}
+table <- params_cdi[order(params_cdi$freq, decreasing = T), ][1:10, ]
+row.names(table) <- NULL
+table$freq <- round(table$freq, 1)
+table$dscrmn <- round(table$a, 2)
+table$dffclt <- round(table$b, 2)
+table$a <- NULL
+table$b <- NULL
+table$number.wg <- NULL
+table$number.ws <- NULL
+write.table(table, file="table.txt", quote = F, row.names = F)
+```
+
+Items colored by frequency:
+
+```{r fig.width=12, fig.height=8}
+ggplot(params_cdi[!params_cdi$position %in% c('szukać'), ], aes(b, a, label=position, colour=freq)) + #Remove 'szukać' since it has 93.3% frequency
+  geom_text(aes(label=ifelse(freq > 0, as.character(position), " ")), check_overlap = T) +
+  geom_text(aes(label=ifelse(freq > 30, as.character(position), " ")), check_overlap = F) +
   geom_point(alpha = 0.3) +
+  annotate("text", x = params_cdi[params_cdi$number.ws == 508, "b"] - 0.05, y = params_cdi[params_cdi$number.ws == 508, "a"], colour = "black", label = "szukać") +
+  annotate("text", x = params_cdi[params_cdi$number.ws == 508, "b"] - 0.05, y = params_cdi[params_cdi$number.ws == 508, "a"] + 0.15, colour = "black", label = "(93.3%)") +
   xlab("Difficulty") +
   ylab("Discrimination") +
   labs(colour = "Frequency (%)") +
-  scale_color_gradient(low="red", high="green") + 
+  scale_color_gradient(low="green", high="red") + 
   theme(
   panel.background = element_rect(fill = NA),
   panel.grid.major = element_line(colour = "grey"),
@@ -96,26 +138,43 @@ ggplot(params_cdi[!params_cdi$number.ws == 457, ], aes(b, a, label=position, col
 Most popular categories:
 
 ```{r}
-items_used <- apply(raw_responses, 1, function(x) which(!is.na(x)))
-cat_categories <- cdi[unlist(items_used, use.names = F), "category"]
-cat_categories  <- as.data.frame(round(sort(table(cat_categories) / length(cat_categories), decreasing=T), 3) * 100)
-colnames(cat_categories) <- c("category", "freq")
+cat_categories <- data.frame(matrix(NA, nrow = length(sim_results), ncol = length(unique(cdi$category))))
+colnames(cat_categories) <- unique(cdi$category)
+
+n <- 1
+for (sim in sim_results){
+  person_items <- sim$items_answered
+  person_cats <- table(cdi[person_items, "category"]) / length(person_items)
+  for (col in colnames(cat_categories)){
+    if (col %in% names(person_cats)){
+      cat_categories[[col]][n] <- person_cats[[col]]
+    } else {
+      cat_categories[[col]][n] <- 0
+    }
+  }
+  n <- n + 1
+}
+
+cat_categories <- data.frame(category = unique(cdi$category), freq = round( apply(cat_categories, 2, function(x) mean(x)), 3) * 100)
 ```
 
 ```{r}
-cdi_categories <- as.data.frame(round(sort(table(cdi$category) / nrow(cdi), decreasing = T), 3) * 100)
+cdi_categories <- as.data.frame(round(table(cdi$category) / nrow(cdi), 3) * 100)
 colnames(cdi_categories) <- c("category", "freq")
 ```
 
 ```{r}
 categories_used <- merge(cat_categories, cdi_categories, by="category", suffixes = c("_CAT", "_full"))
-categories_used$diff <- categories_used$freq_CAT - categories_used$freq_full
+# categories_used$diff <- categories_used$freq_CAT - categories_used$freq_full
 categories_used$mean_dscr <- round(aggregate(a ~ category, data = params_cdi, mean)$a, 2)
 categories_used$mean_dfclt <- round(aggregate(b ~ category, data = params_cdi, mean)$b, 2)
+```
+
+```{r}
 categories_used
 ```
-```{r eval=F}
-cl <- makeCluster(detectCores())
-sim_results_st <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_items = 10, min_SEM = 0.1, max_items = 50, thetas.start = start_thetas - 2))
-save.image("Data/items_usage.RData")
+
+```{r eval=F, include=F}
+write.table(categories_used, file="categories.txt", quote = F, row.names = F)
 ```
+
