@@ -180,6 +180,7 @@ pre code {
 </ul></li>
 </ul>
 <pre class="r"><code>library(mirt)
+library(mirtCAT)
 library(ggpubr)
 library(parallel)
 library(plyr)</code></pre>
@@ -282,6 +283,48 @@ results &lt;- mirtCAT(mo = mo, method = &quot;MAP&quot;, criteria = &quot;MI&quo
 <pre><code>## first_item_responses
 ##     1     2 
 ## 0.071 0.929</code></pre>
+</div>
+<div id="check-for-age-only" class="section level2">
+<h2>Check for age only</h2>
+<pre class="r"><code>fscores_aggr &lt;- aggregate(F1 ~ months, data = fscores_demo, mean)
+fscores_aggr</code></pre>
+<pre><code>##    months          F1
+## 1      18 -0.71924468
+## 2      19 -0.82423841
+## 3      20 -0.77086294
+## 4      21 -0.73664093
+## 5      22 -0.41533831
+## 6      23 -0.39705844
+## 7      24 -0.47477362
+## 8      25 -0.17092590
+## 9      26  0.03801307
+## 10     27  0.09202034
+## 11     28  0.01272139
+## 12     29  0.23717944
+## 13     30  0.32923251
+## 14     31  0.42002650
+## 15     32  0.42578156
+## 16     33  0.58940953
+## 17     34  0.73761653
+## 18     35  0.75175599
+## 19     36  0.80567454</code></pre>
+<pre class="r"><code>age_unit &lt;- colnames(fscores_aggr)[1]
+start_thetas2 &lt;- as.matrix(
+    mapply(
+      function(age){
+        return(fscores_aggr[fscores_aggr[[age_unit]] == age, &quot;F1&quot;])
+      },
+      fscores_demo[[age_unit]]
+    )
+  )</code></pre>
+<p>Make simulation with start thetas given by age only:</p>
+<pre class="r"><code>results_thetasAge&lt;- mirtCAT(mo = mo, method = &quot;MAP&quot;, criteria = &quot;MI&quot;, start_item = &quot;MI&quot;, local_pattern = responses, cl = makeCluster(detectCores()), design = list(min_SEM = 0.1, max_items = 50, min_items = 10, thetas.start = start_thetas2))</code></pre>
+<pre class="r"><code>get_sim_results(results_thetasAge, fscores, params)</code></pre>
+<pre><code>## [1] &quot;Mean length: 29.3  Median length: 23  Correlation: 0.984  Mean SE: 0.124  Reliability: 0.985  Unused items: 442&quot;</code></pre>
+<pre class="r"><code>get_first_item_responses(results_thetasAge, responses)</code></pre>
+<pre><code>## first_item_responses
+##     1     2 
+## 0.499 0.501</code></pre>
 </div>
 </div>
 

@@ -17,6 +17,7 @@ Content:
 
 ```{r libraries, warning=F, message=F}
 library(mirt)
+library(mirtCAT)
 library(ggpubr)
 library(parallel)
 library(plyr)
@@ -163,4 +164,37 @@ get_first_item_responses(results_thetas05Given, responses)
 
 ```{r}
 get_first_item_responses(results_thetas2Given, responses)
+```
+
+## Check for age only
+
+```{r}
+fscores_aggr <- aggregate(F1 ~ months, data = fscores_demo, mean)
+fscores_aggr
+```
+
+```{r}
+age_unit <- colnames(fscores_aggr)[1]
+start_thetas2 <- as.matrix(
+    mapply(
+      function(age){
+        return(fscores_aggr[fscores_aggr[[age_unit]] == age, "F1"])
+      },
+      fscores_demo[[age_unit]]
+    )
+  )
+```
+
+Make simulation with start thetas given by age only:
+
+```{r eval=F}
+results_thetasAge<- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = makeCluster(detectCores()), design = list(min_SEM = 0.1, max_items = 50, min_items = 10, thetas.start = start_thetas2))
+```
+
+```{r}
+get_sim_results(results_thetasAge, fscores, params)
+```
+
+```{r}
+get_first_item_responses(results_thetasAge, responses)
 ```
