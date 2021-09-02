@@ -1,6 +1,6 @@
 # Communicative Development Inventories - IRT analysis and CAT simulations
 
-## Master thesis parts:
+## Master thesis:
 
 **Model fit** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/model_fit.html <br/>
 **Item pool** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/item_pool.html <br/>

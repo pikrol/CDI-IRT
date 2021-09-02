@@ -11,9 +11,9 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 
 Content:
 
-* Preliminary CAT simulation
-* Items preselection
-* Simulation with restricted pool
+* Preliminary simulation with Kachergis settings
+* Items preselection (2 ways)
+* Simulations with the restricted pools
 
 ```{r libraries, warning=F, message=F}
 library(mirt)
@@ -54,8 +54,8 @@ Prepare items parameters and ability estimations from the full CDI:
 ```{r eval = F}
 params <- as.data.frame(coef(mod_r, simplify = T)$items)[1:2]
 fscores <- as.data.frame(fscores(mod_r, method = "MAP", full.scores.SE = T))
-# save(params, file = "Data/params")
-# save(fscores, file = "Data/fscores")
+save(params, file = "Data/params")
+save(fscores, file = "Data/fscores")
 ```
 
 Make preliminary CAT simulation:
@@ -69,11 +69,11 @@ preliminary_CAT <- mirtCAT(mo = generate.mirt_object(params, '2PL') , method = "
 get_sim_results(preliminary_CAT, fscores, params)
 ```
 
-# Items preselection
+# First way of preselection
 
 Calculate correlation of responses with age, difficulty, discrimination and distance from (0,0):
 
-```{r eval=F}
+```{r}
 ctt_analysis <- itemAnalysis(responses)
 cor <- apply(responses, 2, FUN = function(x) cor(x, responses_demo$months))
 ctt_params <- data.frame(dffclt = ctt_analysis$itemReport$itemMean, dscrmn = ctt_analysis$itemReport$pBis, cor = cor)
@@ -109,6 +109,87 @@ Check how many of items used in preliminary CAT simulation are in selected 250 i
 ```{r}
 table(as.vector(which(apply(laply(preliminary_CAT, function(x) x$raw_responses), 2, function(x) any(!is.na(x))))) %in% ctt_params_s[ctt_params_s$selected == "Yes", "number.ws"] )
 ```
+
+## Simulation with the restricted pool
+
+Create model using only selected items:
+
+```{r eval=F}
+mod_r250_1 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE)
+```
+
+```{r}
+mod_r250_1
+```
+
+Try increase quadratures:
+
+```{r eval=F}
+mod_r250_2 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE, quadpts = 101)
+```
+
+```{r}
+mod_r250_2
+```
+
+Increase quadratures once more:
+
+```{r eval=F}
+mod_r250_3 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE, quadpts = 151, technical = list(NCYCLES = 10000))
+```
+
+```{r}
+mod_r250_3
+```
+
+And once more:
+
+```{r eval=F}
+mod_r250_4 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE, quadpts = 301, technical = list(NCYCLES = 10000))
+```
+
+```{r}
+mod_r250_4
+```
+
+Sice difference in Log-Lik is minimal I select mod_r250_4 for further analysis and cosider 301 quadratures as optimal number for this number ofo items.
+
+Check items fit:
+
+```{r eval=F}
+itemfit <- itemfit(mod_r250_4 , method = "MAP")
+```
+
+```{r}
+length(which(itemfit$p.S_X2 < 0.001))
+```
+
+Check LD:
+
+```{r eval=F}
+residuals <- residuals(mod_r250_4 )
+residuals[lower.tri(residuals)] <- NA
+```
+
+```{r}
+hist(residuals, main="Histogram of signed Cramer's V coefficients", xlab= "Cramers V")
+```
+
+```{r}
+summary(as.vector(residuals))
+```
+
+Make simulation with Kachergis et al. (2021) recommended settings on a restricted model:
+
+```{r eval=F}
+params_r250 <- as.data.frame(coef(mod_r250_4 , simplify = T)$items)[1:2]
+preliminary_CAT_r250 <- mirtCAT(mo = generate.mirt_object(params_r250, '2PL'), method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], cl = cl, design = list(min_SEM = 0.15, min_items = 25, max_items = 50))
+```
+
+```{r}
+get_sim_results(preliminary_CAT_r250, fscores, params_r250)
+```
+
 ## Second way of preselection
 
 Count difficulties in months intervals and calculate theirs correlations with ages:
@@ -149,85 +230,70 @@ ggplot(ctt_params_s, aes(cor2, dscrmn, colour=selected, label=position)) +
   legend.position = "top"
 )
 ```
+
 ```{r}
 table(as.vector(which(apply(laply(preliminary_CAT, function(x) x$raw_responses), 2, function(x) any(!is.na(x))))) %in% ctt_params_s[ctt_params_s$selected == "Yes", "number.ws"] )
 ```
 
-# Simulation with restricted pool
-
-Create model using only selected items:
-
 ```{r eval=F}
-mod_r250_1 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE)
+mod_r250_s2 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE, quadpts = 301, technical = list(NCYCLES = 10000))
 ```
 
-```{r}
-mod_r250_1
-```
-
-Try increase quadratures:
-
-```{r eval=F}
-mod_r250_2 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE, quadpts = 101)
-```
-```{r}
-mod_r250_2
-```
-
-Increase quadratures once more:
-
-```{r eval=F}
-mod_r250_3 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE, quadpts = 151, technical = list(NCYCLES = 10000))
-```
-```{r}
-mod_r250_3
-```
-
-And once more:
-
-```{r eval=F}
-mod_r250_4 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE, quadpts = 301, technical = list(NCYCLES = 10000))
-```
-```{r}
-mod_r250_4
-```
-
-Sice difference in Log-Lik is minimal I select mod_r250_4 for further analysis:
-
-```{r}
-mod <- mod_r250_4
-mod
-```
 Check items fit:
 
 ```{r eval=F}
-itemfit <- itemfit(mod_r250_4 , method = "MAP")
+itemfit_s2 <- itemfit(mod_r250_s2 , method = "MAP")
 ```
 
 ```{r}
-length(which(itemfit$p.S_X2 < 0.001))
+length(which(itemfit_s2$p.S_X2 < 0.001))
 ```
+```{r}
+misfit <- itemfit_s2[itemfit_s2$p.S_X2 < 0.001, "item"]
+misfit_nr <- as.numeric(substr(misfit, 5, 7))
+cdi[cdi$number.ws == misfit_nr, ]
+```
+
 Check LD:
 
 ```{r eval=F}
-residuals <- residuals(mod_r250_4 )
-residuals[lower.tri(residuals)] <- NA
+residuals_s2 <- residuals(mod_r250_s2)
+residuals_s2[lower.tri(residuals_s2)] <- NA
 ```
 
 ```{r}
-hist(residuals, main="Histogram of signed Cramer's V coefficients", xlab= "Cramers V")
+hist(residuals_s2, main="Histogram of signed Cramer's V coefficients", xlab= "Cramers V")
 ```
 
 ```{r}
-summary(as.vector(residuals))
+summary(as.vector(residuals_s2))
+```
+Remove one misfit and create model once more:
+
+```{r eval=F}
+responses2 <- responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])]
+responses2 <- responses2[, -c(match(misfit, colnames(responses2)))]
+mod_r250_s2_2 <- mirt(data = responses2, model = 1, SE = TRUE, quadpts = 301, technical = list(NCYCLES = 10000))
+```
+
+Check items fit:
+
+```{r eval=F}
+itemfit_s2_2 <- itemfit(mod_r250_s2_2 , method = "MAP")
+```
+
+```{r}
+length(which(itemfit_s2_2$p.S_X2 < 0.001))
 ```
 
 Make simulation with Kachergis et al. (2021) recommended settings on a restricted model:
 
 ```{r eval=F}
-params_r250 <- as.data.frame(coef(mod_r250_4 , simplify = T)$items)[1:2]
-preliminary_CAT_r250 <- mirtCAT(mo = generate.mirt_object(params_r250, '2PL'), method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], cl = cl, design = list(min_SEM = 0.15, min_items = 25, max_items = 50))
+params_r250_s2 <- as.data.frame(coef(mod_r250_s2_2 , simplify = T)$items)[1:2]
+cl <- makeCluster(detectCores())
+preliminary_CAT_r250_s2 <- mirtCAT(mo = generate.mirt_object(params_r250_s2, '2PL'), method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], cl = cl, design = list(min_SEM = 0.15, min_items = 25, max_items = 50))
 ```
+
 ```{r}
-get_sim_results(preliminary_CAT_r250, fscores, params_r250)
+get_sim_results(preliminary_CAT_r250_s2, fscores, params_r250_s2)
 ```
