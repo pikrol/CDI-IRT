@@ -14,13 +14,11 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 
 Content:
 
-* Ability vs. SE full pool
+* Plot ability vs. SE whole pool
 * Simulation with SE = 0.15 stop criterion
 * Simulation with SE = 0.1 stop criterion
-* Cronbach's alpha
 
 ```{r libraries, warning=F, message=F}
-library(ltm)
 library(mirt)
 library(mirtCAT)
 library(parallel)
@@ -42,7 +40,7 @@ source(paste0(getwd(),"/get_sim_results.R"))
 load("Data/early_stop_CAT.RData")
 ```
 
-# Ability vs. SE full pool
+# Ability vs. SE whole pool
 
 ```{r}
 ggplot(fscores, aes(F1, SE_F1)) +
@@ -59,8 +57,6 @@ ggplot(fscores, aes(F1, SE_F1)) +
 summary(fscores$SE_F1)
 ```
 # Simulation with SE = 0.1 stop criterion
-
-Make early-stopping simulation with desired SE = 0.1:
 
 ```{r eval=F}
 mo <- generate.mirt_object(params, '2PL')
@@ -81,7 +77,7 @@ cuts <- cut(tests_lengths, breaks = c(0, 5, 10, 15, 25, 35, 50, 75, 100, 666, 66
 #Plot
 ggplot(data.frame(round(table(cuts) / nrow(responses) * 100, 1)), aes(x = cuts, y = Freq)) +
   xlab("Number of items administered") +
-  ylab("Percent of subjects (%)") +
+  ylab("Percent of respondents (%)") +
   geom_bar(stat = "identity") +
   geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
   theme_pubclean() +
@@ -89,8 +85,6 @@ ggplot(data.frame(round(table(cuts) / nrow(responses) * 100, 1)), aes(x = cuts, 
 ```
 
 # Simulation with SE = 0.15 stop criterion
-
-Make early-stopping simulation with desired SE = 0.15:
 
 ```{r eval=F}
 results_SE15 <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.15))
@@ -109,7 +103,7 @@ cuts <- cut(tests_lengths, breaks = c(0, 5, 10, 15, 25, 35, 50, 75, 100, 666, 66
 #Plot
 ggplot(data.frame(round(table(cuts) / nrow(responses) * 100, 1)), aes(x = cuts, y = Freq)) +
   xlab("Number of items administered") +
-  ylab("Percent of subjects (%)") +
+  ylab("Percent of respondents (%)") +
   geom_bar(stat = "identity") +
   geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
   theme_pubclean() +
@@ -128,12 +122,4 @@ ggplot(data.frame(round(table(cuts) / nrow(responses) * 100, 1)), aes(x = cuts, 
   geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
   theme_pubclean() +
   theme(text = element_text(size=16))
-```
-
-# Cronbach's alpha
-
-Calculate Cronbach's alpha for responses:
-
-```{r}
-cronbach.alpha(responses)
 ```
