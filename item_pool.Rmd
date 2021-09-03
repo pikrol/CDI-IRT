@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 
 Content:
 
-* Preliminary simulation with Kachergis settings
+* Preliminary simulation with Kachergis et al. (2021) settings
 * Items preselection (2 ways)
 * Simulations with the restricted pools
 
@@ -69,7 +69,7 @@ preliminary_CAT <- mirtCAT(mo = generate.mirt_object(params, '2PL') , method = "
 get_sim_results(preliminary_CAT, fscores, params)
 ```
 
-# First way of preselection
+# First way of items preselection
 
 Calculate correlation of responses with age, difficulty, discrimination and distance from (0,0):
 
@@ -104,7 +104,7 @@ ggplot(ctt_params_s, aes(cor, dscrmn, colour=selected, label=position)) +
   legend.position = "top"
 )
 ```
-Check how many of items used in preliminary CAT simulation are in selected 250 items:
+Check how many of items used in preliminary CAT simulation are in the currently selected 250 items:
 
 ```{r}
 table(as.vector(which(apply(laply(preliminary_CAT, function(x) x$raw_responses), 2, function(x) any(!is.na(x))))) %in% ctt_params_s[ctt_params_s$selected == "Yes", "number.ws"] )
@@ -122,7 +122,7 @@ mod_r250_1 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$select
 mod_r250_1
 ```
 
-Try increase quadratures:
+Try increase quadrature points:
 
 ```{r eval=F}
 mod_r250_2 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE, quadpts = 101)
@@ -132,7 +132,7 @@ mod_r250_2 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$select
 mod_r250_2
 ```
 
-Increase quadratures once more:
+Increase once more:
 
 ```{r eval=F}
 mod_r250_3 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], model = 1, SE = TRUE, quadpts = 151, technical = list(NCYCLES = 10000))
@@ -152,7 +152,7 @@ mod_r250_4 <- mirt(data = responses[, row.names(ctt_params_s[ctt_params_s$select
 mod_r250_4
 ```
 
-Sice difference in Log-Lik is minimal I select mod_r250_4 for further analysis and cosider 301 quadratures as optimal number for this number ofo items.
+Sice difference in Log-Lik is minimal I select mod_r250_4 for further analysis and cosider 301 quadrature points as optimal number for this number of items.
 
 Check items fit:
 
@@ -179,7 +179,7 @@ hist(residuals, main="Histogram of signed Cramer's V coefficients", xlab= "Crame
 summary(as.vector(residuals))
 ```
 
-Make simulation with Kachergis et al. (2021) recommended settings on a restricted model:
+Make simulation with Kachergis et al. (2021) recommended settings on a restricted pool model:
 
 ```{r eval=F}
 params_r250 <- as.data.frame(coef(mod_r250_4 , simplify = T)$items)[1:2]
@@ -204,8 +204,6 @@ for (month in unique(responses_demo$months)){
 }
 
 cor2 <- apply(dffclts_months, 2, FUN = function(x) cor(x, unique(responses_demo$months)))
-cor2[1:5]
-
 ctt_params$cor2 <- cor2
 ctt_params$dist2 <- sqrt(ctt_params$dscrmn^2 + ctt_params$cor2^2) 
 ```
@@ -230,6 +228,7 @@ ggplot(ctt_params_s, aes(cor2, dscrmn, colour=selected, label=position)) +
   legend.position = "top"
 )
 ```
+Check how many of items used in preliminary CAT simulation are in the currently selected 250 items:
 
 ```{r}
 table(as.vector(which(apply(laply(preliminary_CAT, function(x) x$raw_responses), 2, function(x) any(!is.na(x))))) %in% ctt_params_s[ctt_params_s$selected == "Yes", "number.ws"] )
@@ -286,11 +285,10 @@ itemfit_s2_2 <- itemfit(mod_r250_s2_2 , method = "MAP")
 length(which(itemfit_s2_2$p.S_X2 < 0.001))
 ```
 
-Make simulation with Kachergis et al. (2021) recommended settings on a restricted model:
+Make simulation with Kachergis et al. (2021) recommended settings on a restricted pool (249 items) model:
 
 ```{r eval=F}
 params_r250_s2 <- as.data.frame(coef(mod_r250_s2_2 , simplify = T)$items)[1:2]
-cl <- makeCluster(detectCores())
 preliminary_CAT_r250_s2 <- mirtCAT(mo = generate.mirt_object(params_r250_s2, '2PL'), method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses[, row.names(ctt_params_s[ctt_params_s$selected == "Yes", ])], cl = cl, design = list(min_SEM = 0.15, min_items = 25, max_items = 50))
 ```
 
