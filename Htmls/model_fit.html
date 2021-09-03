@@ -173,13 +173,13 @@ pre code {
 
 <p>Content:</p>
 <ul>
-<li>Full pool (670 items) model
+<li>670 items model
 <ul>
 <li>Items fit</li>
 <li>Local dependence</li>
 </ul></li>
-<li>Cramer’s V for responses matrix</li>
-<li>Restricted pool (667 items) model</li>
+<li>Cramer’s V for responses</li>
+<li>667 items model</li>
 </ul>
 <pre class="r"><code>library(mirt)
 library(DescTools) #For classical Cramer&#39;s V calculation</code></pre>
@@ -187,9 +187,9 @@ library(DescTools) #For classical Cramer&#39;s V calculation</code></pre>
 <pre class="r"><code>responses_demo &lt;- read.csv(&quot;Data/responses_demo.csv&quot;, encoding = &quot;UTF-8&quot;)
 responses &lt;- as.matrix(responses_demo[,5:ncol(responses_demo)])
 cdi &lt;- read.csv(&quot;Data/cdi.csv&quot;, encoding = &quot;UTF-8&quot;)</code></pre>
-<p>Speed up some computations:</p>
-<pre class="r"><code>mirtCluster()</code></pre>
-<p>Table of log-likelihoods and quadratures (cycles increased properly to reach convergence):</p>
+<div id="items-model" class="section level1">
+<h1>670 items model</h1>
+<p>Table of log-likelihoods and quadratures (cycles were increased properly to reach convergence):</p>
 <table>
 <thead>
 <tr class="header">
@@ -225,8 +225,7 @@ cdi &lt;- read.csv(&quot;Data/cdi.csv&quot;, encoding = &quot;UTF-8&quot;)</code
 </tbody>
 </table>
 <p>Based on 3rd report - “Quadratures” from 28.06.2021</p>
-<div id="full-pool-670-items-model" class="section level1">
-<h1>Full pool (670 items) model</h1>
+<p>601 quadrature points seems to be an optimal number - differece in LogLik is really marginal.</p>
 <p>Create model:</p>
 <pre class="r"><code>mod &lt;- mirt(data = responses, model = 1, SE = TRUE, quadpts = 601, technical = list(NCYCLES = 10000))
 save(mod, file = &quot;Data/mod&quot;)</code></pre>
@@ -415,8 +414,8 @@ data.frame(pos1 = cdi[indexes[, 1], &quot;position&quot;], pos2 = cdi[indexes[, 
 ## 15 na.górę.na.górze     na.dół.na.dole 0.8348244
 ## 16   z.tyłu.do.tyłu z.przodu.do.przodu 0.9035778</code></pre>
 </div>
-<div id="restricted-pool-667-items-model" class="section level1">
-<h1>Restricted pool (667 items) model</h1>
+<div id="items-model-1" class="section level1">
+<h1>667 items model</h1>
 <p>Create model on a restricted set of items (remove items marked as misfits for p &lt; 0.001):</p>
 <pre class="r"><code>items_to_remove &lt;- as.numeric(row.names(itemfit[itemfit$p.S_X2 &lt; 0.001, ]))
 save(items_to_remove, file=&quot;Data/items_to_remove&quot;)</code></pre>

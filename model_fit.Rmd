@@ -11,11 +11,11 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 
 Content:
 
-* Full pool (670 items) model
+* 670 items model
   + Items fit
   + Local dependence
-* Cramer's V for responses matrix
-* Restricted pool (667 items) model
+* Cramer's V for responses
+* 667 items model
 
 ```{r libraries, warning=FALSE, message=FALSE}
 library(mirt)
@@ -34,13 +34,9 @@ cdi <- read.csv("Data/cdi.csv", encoding = "UTF-8")
 load("Data/model_fit.RData")
 ```
 
-Speed up some computations:
+# 670 items model
 
-```{r eval=F}
-mirtCluster()
-```
-
-Table of log-likelihoods and quadratures (cycles increased properly to reach convergence):
+Table of log-likelihoods and quadratures (cycles were increased properly to reach convergence):
 
 | Quadratures | LogLik      |
 |-------------|-------------|
@@ -53,7 +49,7 @@ Table of log-likelihoods and quadratures (cycles increased properly to reach con
 
 Based on 3rd report - "Quadratures" from 28.06.2021
 
-# Full pool (670 items) model
+601 quadrature points seems to be an optimal number - differece in LogLik is really marginal.
 
 Create model:
 
@@ -208,7 +204,7 @@ indexes <- arrayInd(which(cramersV > 0.8), dim(cramersV))
 data.frame(pos1 = cdi[indexes[, 1], "position"], pos2 = cdi[indexes[, 2], "position"], cramersV = cramersV[indexes])
 ```
 
-# Restricted pool (667 items) model
+# 667 items model
 
 Create model on a restricted set of items (remove items marked as misfits for p < 0.001):
 
