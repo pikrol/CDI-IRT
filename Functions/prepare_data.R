@@ -31,6 +31,12 @@ prepare_data <- function(data, version, production = T){
   cdi <<- cdi[order(cdi$Numer),]
   row.names(cdi) <- NULL
   colnames(cdi) <<- c("category", "number.ws", "number.wg", "position")
+  
+  if (version == "G") {
+    cdi <<- cdi[order(cdi$number.wg), ]
+    cdi <<- cdi[!cdi$position %in% c("brzydko", "ciepło", "dobrze", "gorąco", "ładnie", "mokro", "zimno"), ] #Remove some doubled words
+    cdi <<- na.omit(cdi) 
+  }
 
   #Choose version
   cat("\nChoosing inventory version...")
