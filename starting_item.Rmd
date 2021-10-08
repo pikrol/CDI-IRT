@@ -66,9 +66,11 @@ ggplot(fscores_aggr, aes(months, F1, colour=gender)) +
   legend.position = "top"
 )
 ```
+
 ```{r}
 cor(fscores_aggr$months, fscores_aggr$F1)
 ```
+
 # Simulations with different starting thetas
 
 Get start theta for each subject by months and gender:
@@ -125,9 +127,11 @@ get_first_item_responses(results, responses)
 ```{r eval=F}
 results_thetasGiven <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.1, max_items = 50, min_items = 10, thetas.start = start_thetas))
 ```
+
 ```{r}
 get_sim_results(results_thetasGiven, fscores, params)
 ```
+
 ```{r}
 get_first_item_responses(results_thetasGiven, responses)
 ```
@@ -160,9 +164,47 @@ get_sim_results(results_thetas2Given, fscores, params)
 get_first_item_responses(results_thetas2Given, responses)
 ```
 
+---
 
+## Starting thetas given by age only (extension w.r.t. master's thesis)
 
+```{r}
+fscores_aggr <- aggregate(F1 ~ months, data = fscores_demo, mean)
+ggplot(fscores_aggr, aes(months, F1)) +
+  geom_point() +
+  xlab("Age (months)") +
+  ylab("Ability level (Θ)") +
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "grey"),
+  legend.position = "top"
+)
+```
 
+```{r}
+cor(fscores_aggr$months, fscores_aggr$F1)
+```
 
+```{r}
+start_thetas <- as.matrix(
+    mapply(
+      function(age){
+        return(fscores_aggr[fscores_aggr[[age_unit]] == age, "F1"])
+      },
+      fscores_demo[[age_unit]]
+    )
+  )
+```
 
+```{r eval=F}
+results_thetasAge <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.1, max_items = 50, min_items = 10, thetas.start = start_thetas))
+```
+
+```{r}
+get_sim_results(results_thetasAge, fscores, params)
+```
+
+```{r}
+get_first_item_responses(results_thetasAge, responses)
+```
 
