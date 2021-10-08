@@ -1,0 +1,308 @@
+---
+title: "IRMiK: Słowa i Gesty - vocabulary comprehension"
+author: "Piotr Król"
+date: "07 10 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+Load libraries and functions:
+
+```{r libraries, warning=FALSE, message=FALSE}
+library(mirt)
+library(mirtCAT)
+library(parallel)
+library(plyr)
+library(ggpubr)
+source(paste0(getwd(),"/Functions/prepare_data.R"))
+source(paste0(getwd(),"/Functions/get_sim_results.R"))
+```
+
+Load data downloaded from https://drive.google.com/file/d/1i4YupJCfE6qt1iZ9A6iqZaxXv71gZ_JV/view 
+
+```{r}
+data <- read.csv("Data/irmik_lex.csv", encoding = "UTF-8")
+names(data)[names(data) == 'Płeć'] <- 'Plec' #Polish symbols causes some problems later when preparing data
+```
+
+# Data preparation & data characteristics
+
+Prepare data with ready function:
+
+```{r eval=F}
+prepare_data(data, "G", F)
+rm(d)
+```
+
+```{r include=F}
+load("Data/SiG_comp.RData")
+```
+
+Prepare responses matrix
+
+```{r}
+responses <- as.matrix(responses_demo[,5:ncol(responses_demo)])
+```
+
+Number of respondents:
+
+```{r}
+nrow(responses)
+```
+
+Number of items:
+
+```{r}
+ncol(responses)
+```
+
+Number of floor respondents:
+
+```{r}
+length(which(rowSums(responses) == 0))
+```
+
+Number of ceiling respondents:
+
+```{r}
+length(which(rowSums(responses) == 380))
+```
+
+# Model creation & quadratures
+
+301 quadratures
+
+```{r eval=F}
+mod301q <- mirt(data = responses, model = 1, SE = TRUE, quadpts = 301, technical = list(NCYCLES = 30000))
+```
+
+```{r}
+mod301q
+```
+
+451 quadratures
+
+```{r eval=F}
+mod451q <- mirt(data = responses, model = 1, SE = TRUE, quadpts = 451, technical = list(NCYCLES = 30000))
+```
+
+```{r}
+mod451q
+```
+
+I select model created with use of **451 quadrature points** for further analysis:
+
+```{r}
+mod <- mod451q
+```
+
+# Model fit
+
+## Items fit
+
+```{r eval=F}
+itemfit <- itemfit(mod, method = "MAP")
+```
+
+```{r}
+itemfit[itemfit$p.S_X2 < 0.001, ]
+```
+
+```{r}
+cdi[which(cdi$number.wg == 104), ]
+```
+
+## Local dependence
+
+```{r eval=F}
+residuals <- residuals(mod)
+```
+
+```{r}
+residuals_up <- residuals
+residuals_up[lower.tri(residuals_up)] <- NA
+hist(residuals_up, main="Histogram of signed Cramer's V coefficients", xlab= "Cramer's V")
+```
+
+```{r}
+summary(as.vector(residuals_up))
+```
+
+The most highly dependent positions:
+
+```{r}
+indexes <- arrayInd(which(residuals_up > 0.3), dim(residuals))
+data.frame(pos1 = cdi[indexes[, 1], "position"], pos2 = cdi[indexes[, 2], "position"], CramersV = residuals_up[indexes])
+```
+
+# Model creation once more
+
+Remove one misfit and create model once more:
+
+```{r eval=F}
+responses_r <- responses[, -which((colnames(responses) %in% c("item104")))]
+cdi_r <- cdi[cdi$number.wg != 104, ]
+mod_r <- mirt(data = responses_r, model = 1, SE = TRUE, quadpts = 451, technical = list(NCYCLES = 30000))
+```
+
+## Items fit
+
+```{r eval=F}
+itemfit_r <- itemfit(mod_r, method = "MAP")
+```
+
+```{r}
+itemfit_r[itemfit_r$p.S_X2 < 0.001, ]
+```
+No misfits now. Hurra!
+
+# Items parameteres
+
+```{r eval=F}
+params_IRT <- as.data.frame(coef(mod_r, simplify = T, IRTpars = T)$items)[1:2]
+params_cdi <- cbind(params_IRT, cdi_r)
+```
+
+```{r fig.width=12, fig.height=8}
+ggplot(params_cdi, aes(b, a, colour=category, label=position)) +
+  geom_text(check_overlap = T) +
+  geom_point(alpha = 0.3) +
+  xlab("Difficulty") +
+  ylab("Discrimination") +
+  labs(colour = "Category") +
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "grey"),
+  legend.position = "top"
+)
+```
+
+# Ability vs. SE whole pool:
+
+```{r eval=F}
+fscores <- as.data.frame(fscores(mod_r, method = "MAP", full.scores.SE = T))
+```
+
+```{r}
+ggplot(fscores, aes(F1, SE_F1)) +
+  geom_point(alpha = 0.3) +
+  xlab("Ability level (Θ)") +
+  ylab("Standard error (SE)") +
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "lightgrey")
+)
+```
+
+# Fixed-length simulations
+
+```{r eval=F}
+params <- as.data.frame(coef(mod_r, simplify = T)$items)[1:2]
+mo <- generate.mirt_object(params, '2PL')
+lengths <- c(5, 10, 15, 25, 35, 50, 75, 100)
+results_fixed_length <- data.frame(cor = NA, meanSE = NA, rel = NA, unused = NA)
+cl <- makeCluster(detectCores())
+
+for (n in lengths){
+  
+  #Make simulation
+  sim_results <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_items = n, max_items = n))
+  
+  #Obtain thetas
+  thetas <- laply(sim_results, function(x) x$thetas)
+  
+  #Get correlation of thetas with full scores
+  cor <- round(cor(thetas, fscores$F1), 3)
+  
+  #Get mean SE
+  meanSE <- round(mean(laply(sim_results, function(x) x$SE_thetas)), 3)
+  
+  #Get reliability
+  rel <- round(1 - meanSE**2, 3)
+  
+  #Get number of unused items
+  items_answered <- laply(sim_results, function(x) x$items_answered)
+  unused <- nrow(params) - length(unique(as.vector(items_answered)))
+  
+  #Update data frame with results
+  results_fixed_length <- rbind(results_fixed_length, c(cor, meanSE, rel, unused))
+  
+}
+
+results_fixed_length <- na.omit(results_fixed_length)
+row.names(results_fixed_length) <- lengths
+```
+
+```{r}
+results_fixed_length
+```
+
+# Simulation with SE = 0.1 stop criterion
+
+```{r eval=F}
+results_SE1 <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.1))
+```
+
+```{r}
+get_sim_results(results_SE1, fscores, params)
+```
+
+Plot distribution of tests lengths:
+
+```{r fig.width=12, fig.height=8}
+#Prepare cuts
+tests_lengths <- laply(results_SE1, function(x) length(x$items_answered))
+cuts <- cut(tests_lengths, breaks = c(0, 5, 10, 15, 25, 35, 50, 75, 100, 378, 379), labels = c("1 - 5", "6 - 10", "11 - 15", "16 - 25", "26 - 35", "36 - 50", "51 - 75", "76 - 100", "101 - 378", "379"))
+
+#Plot
+ggplot(data.frame(round(table(cuts) / nrow(responses) * 100, 1)), aes(x = cuts, y = Freq)) +
+  xlab("Number of items administered") +
+  ylab("Percent of respondents (%)") +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
+  theme_pubclean() +
+  theme(text = element_text(size=16))
+```
+
+# Simulation with SE = 0.15 stop criterion
+
+```{r eval=F}
+results_SE15 <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.15))
+```
+
+```{r}
+get_sim_results(results_SE15, fscores, params)
+```
+
+Plot distribution of tests lengths:
+
+```{r fig.width=12, fig.height=8}
+#Prepare cuts
+tests_lengths <- laply(results_SE15, function(x) length(x$items_answered))
+cuts <- cut(tests_lengths, breaks = c(0, 5, 10, 15, 25, 35, 50, 75, 100, 378, 379), labels = c("1 - 5", "6 - 10", "11 - 15", "16 - 25", "26 - 35", "36 - 50", "51 - 75", "76 - 100", "101 - 378", "379"))
+
+#Plot
+ggplot(data.frame(round(table(cuts) / nrow(responses) * 100, 1)), aes(x = cuts, y = Freq)) +
+  xlab("Number of items administered") +
+  ylab("Percent of respondents (%)") +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
+  theme_pubclean() +
+  theme(text = element_text(size=16))
+```
+
+# SE vs. age
+
+```{r }
+ggplot(data.frame(age = as.factor(responses_demo$months), SE = fscores$SE_F1), aes(age, SE)) +
+  geom_boxplot() +
+  xlab("Age (months)") +
+  ylab("Standard error (SE)") +
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "lightgrey")
+  )
+```

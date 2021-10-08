@@ -1,10 +1,11 @@
-# Polish adaptations of the Communicative Development Inventories - IRT analyses and CAT simulations
+# R markdown reports
 
 ## SiG:
 
 **Production** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/SiG_prod.html <br/>
+**Comprehension** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/SiG_comp.html <br/>
 
-## Master's thesis:
+## Master's thesis (SiZ):
 
 **Model fit** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/model_fit.html <br/>
 **Item pool** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/item_pool.html <br/>
