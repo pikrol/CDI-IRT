@@ -1,7 +1,7 @@
 prepare_data <- function(data, version, production = T){
   
   # ---
-  # Prepares IRMiKs data for IRT analyses and CAT simulations
+  # Prepares IRMiK data for IRT analyses and CAT simulations
   # 
   # Parameters:
   # 0: data - .csv file downloaded from google drive
@@ -26,10 +26,10 @@ prepare_data <- function(data, version, production = T){
   
   #Create df corresponding to the CDI's content
   cat("\nCreating data frame corresponding to the CDI's content...")
-  cdi <<- data[, c("Kategoria", "Numer", "NumerSiG", "Pozycja")]
+  cdi <<- d[, c("Kategoria", "Numer", "NumerSiG", "Pozycja")]
   cdi <<- unique(cdi)
   cdi <<- cdi[order(cdi$Numer),]
-  row.names(cdi) <- NULL
+  row.names(cdi) <<- NULL
   colnames(cdi) <<- c("category", "number.ws", "number.wg", "position")
   
   if (version == "G") {
@@ -46,12 +46,19 @@ prepare_data <- function(data, version, production = T){
   cat("\nReshaping into wide format...")
   if(version == "G") {
     timevar <- "NumerSiG"
-    drop <- "Numer"
-    if (production) v.names <- "M" else v.names <- "R"
+    number.drop <- "Numer"
+    if (production){
+      v.names <- "M"
+      v.names.drop <- "R"
+    } else {
+      v.names <- "R"
+      v.names.drop <- "M"
+    }
   } else {
     timevar <- "Numer"
-    drop <- "NumerSiG"
+    number.drop <- "NumerSiG"
     v.names <- "M"
+    v.names.drop <- "R"
   }
       
   d <<- reshape(d,                           
@@ -59,7 +66,7 @@ prepare_data <- function(data, version, production = T){
                 idvar = c("KOD","WiekDni","WiekMiesiace","Plec"),        
                 direction = "wide",           
                 v.names = v.names,           
-                drop = c("DZIECKO_ID", "R", "Pozycja", "Kategoria", drop, "Wersja"))
+                drop = c("DZIECKO_ID", v.names.drop , "Pozycja", "Kategoria", number.drop, "Wersja"))
   
   #Prepare responses df with demographic variables
   cat("\nPreparing responses data frame...")
