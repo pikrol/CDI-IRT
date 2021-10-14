@@ -9,7 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
 ```
 
-Load libraries:
+Load libraries and functions:
 
 ```{r libraries, warning=FALSE, message=FALSE}
 library(mirt)
@@ -17,6 +17,8 @@ library(mirtCAT)
 library(parallel)
 library(plyr)
 library(ggpubr)
+source(paste0(getwd(),"/Functions/prepare_data.R"))
+source(paste0(getwd(),"/Functions/get_sim_results.R"))
 ```
 
 Load data downloaded from https://drive.google.com/file/d/1i4YupJCfE6qt1iZ9A6iqZaxXv71gZ_JV/view 
@@ -31,7 +33,6 @@ names(data)[names(data) == 'Płeć'] <- 'Plec' #Polish symbols causes some probl
 Prepare data with ready function:
 
 ```{r eval=F}
-source(paste0(getwd(),"/Functions/prepare_data.R"))
 prepare_data(data, "G", T)
 rm(d)
 ```
@@ -69,7 +70,9 @@ Number of ceiling respondents:
 ```{r}
 length(which(rowSums(responses) == 380))
 ```
-# Model creation & quadratures
+# All children (8 - 18 months)
+
+## Model creation & quadratures
 
 61 quadratures
 
@@ -117,9 +120,9 @@ I select model created with use of **451 quadrature points** for further analysi
 mod <- mod451q
 ```
 
-# Model fit
+## Model fit
 
-## Items fit
+### Items fit
 
 ```{r eval=F}
 itemfit <- itemfit(mod, method = "MAP")
@@ -191,7 +194,7 @@ Misfits for some lower p:
 params_cdi[cdi$number.wg %in% substr(itemfit[itemfit$p.S_X2 < 0.01, "item"], 5, 8), ]
 ```
 
-## Local dependence
+### Local dependence
 
 ```{r eval=F}
 residuals <- residuals(mod)
@@ -214,25 +217,27 @@ indexes <- arrayInd(which(residuals_up > 0.3), dim(residuals))
 data.frame(pos1 = cdi[indexes[, 1], "position"], pos2 = cdi[indexes[, 2], "position"], CramersV = residuals_up[indexes])
 ```
 
-# Fixed-length simulations
+## Ability vs. SE
 
 ```{r eval=F}
 fscores <- as.data.frame(fscores(mod, method = "MAP", full.scores.SE = T))
 params <- as.data.frame(coef(mod, simplify = T)$items)[1:2]
 ```
 
-Ability vs. SE whole pool:
-
-```{r}
+```{r fig.width=12, fig.height=8}
 ggplot(fscores, aes(F1, SE_F1)) +
   geom_point(alpha = 0.3) +
   xlab("Ability level (Θ)") +
   ylab("Standard error (SE)") +
+  labs(title = "CDI: WG production (all children)") +
   theme(
   panel.background = element_rect(fill = NA),
-  panel.grid.major = element_line(colour = "lightgrey")
+  panel.grid.major = element_line(colour = "lightgrey"),
+  text = element_text(size=16)
 )
 ```
+
+## Fixed-length simulations
 
 ```{r eval=F}
 mo <- generate.mirt_object(params, '2PL')
@@ -276,7 +281,7 @@ results_fixed_length
 
 **Very big errors even with 100 items**
 
-# Simulation with SE = 0.1 stop criterion
+## Simulation with SE = 0.1 stop criterion
 
 ```{r eval=F}
 mo <- generate.mirt_object(params, '2PL')
@@ -285,7 +290,6 @@ results_SE1 <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "M
 ```
 
 ```{r}
-source(paste0(getwd(),"/get_sim_results.R"))
 get_sim_results(results_SE1, fscores, params)
 ```
 
@@ -301,6 +305,36 @@ ggplot(data.frame(round(table(cuts) / nrow(responses) * 100, 1)), aes(x = cuts, 
   xlab("Number of items administered") +
   ylab("Percent of respondents (%)") +
   geom_bar(stat = "identity") +
+  labs(title = "CDI: WG production (all children). SE = 0.1 stop criterion") +
+  geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
+  theme_pubclean() +
+  theme(text = element_text(size=16))
+```
+# Simulation with SE = 0.15 stop criterion
+
+```{r eval=F}
+mo <- generate.mirt_object(params, '2PL')
+cl <- makeCluster(detectCores())
+results_SE15 <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.15))
+```
+
+```{r}
+get_sim_results(results_SE15, fscores, params)
+```
+
+Plot distribution of tests lengths:
+
+```{r fig.width=12, fig.height=8}
+#Prepare cuts
+tests_lengths <- laply(results_SE15, function(x) length(x$items_answered))
+cuts <- cut(tests_lengths, breaks = c(0, 5, 10, 15, 25, 35, 50, 75, 100, 379, 380), labels = c("1 - 5", "6 - 10", "11 - 15", "16 - 25", "26 - 35", "36 - 50", "51 - 75", "76 - 100", "101 - 379", "380"))
+
+#Plot
+ggplot(data.frame(round(table(cuts) / nrow(responses) * 100, 1)), aes(x = cuts, y = Freq)) +
+  xlab("Number of items administered") +
+  ylab("Percent of respondents (%)") +
+  labs(title = "CDI: WG production (all children). SE = 0.15 stop criterion") +
+  geom_bar(stat = "identity") +
   geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
   theme_pubclean() +
   theme(text = element_text(size=16))
@@ -308,13 +342,144 @@ ggplot(data.frame(round(table(cuts) / nrow(responses) * 100, 1)), aes(x = cuts, 
 
 ## SE vs. age
 
-```{r }
+```{r fig.width=12, fig.height=8 }
 ggplot(data.frame(age = as.factor(responses_demo$months), SE = fscores$SE_F1), aes(age, SE)) +
   geom_boxplot() +
   xlab("Age (months)") +
-  ylab("Standard error (SE)") +
+  ylab("Standard error of ability estimations") +
+  labs(title = "CDI: WG production") +
   theme(
   panel.background = element_rect(fill = NA),
-  panel.grid.major = element_line(colour = "lightgrey")
+  panel.grid.major = element_line(colour = "lightgrey"),
+  text = element_text(size=16)
   )
 ```
+
+# 16-18 months children
+
+```{r}
+responses_demo2 <- responses_demo[responses_demo$months >= 16, ]
+responses2 <- as.matrix(responses_demo2[,5:ncol(responses_demo2)])
+```
+
+## SE vs. age
+
+```{r}
+fscores2 <- fscores[which(responses_demo$months >= 16), ]
+```
+
+```{r fig.width=12, fig.height=8}
+ggplot(fscores2, aes(F1, SE_F1)) +
+  geom_point(alpha = 0.3) +
+  xlab("Ability level (Θ)") +
+  ylab("Standard error (SE)") +
+  labs(title = "CDI: WG production (16 - 18 months children)") +
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "lightgrey"),
+  text = element_text(size=16)
+)
+```
+
+## Simulation with SE = 0.1 stop criterion
+
+```{r eval=F}
+mo <- generate.mirt_object(params, '2PL')
+cl <- makeCluster(detectCores())
+results_SE1_2 <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses2, cl = cl, design = list(min_SEM = 0.1))
+```
+
+```{r}
+get_sim_results(results_SE1_2, fscores2, params)
+```
+
+Plot distribution of tests lengths:
+
+```{r fig.width=12, fig.height=8}
+#Prepare cuts
+tests_lengths <- laply(results_SE1_2, function(x) length(x$items_answered))
+cuts <- cut(tests_lengths, breaks = c(0, 5, 10, 15, 25, 35, 50, 75, 100, 379, 380), labels = c("1 - 5", "6 - 10", "11 - 15", "16 - 25", "26 - 35", "36 - 50", "51 - 75", "76 - 100", "101 - 379", "380"))
+
+#Plot
+ggplot(data.frame(round(table(cuts) / nrow(responses2) * 100, 1)), aes(x = cuts, y = Freq)) +
+  xlab("Number of items administered") +
+  ylab("Percent of respondents (%)") +
+  geom_bar(stat = "identity") +
+  labs(title = "CDI: WG production (16 - 18 months children). SE = 0.1 stop criterion") +
+  geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
+  theme_pubclean() +
+  theme(text = element_text(size=16))
+```
+
+## Simulation with SE = 0.15 stop criterion
+
+```{r eval=F}
+mo <- generate.mirt_object(params, '2PL')
+cl <- makeCluster(detectCores())
+results_SE15_2 <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses2, cl = cl, design = list(min_SEM = 0.15))
+```
+
+```{r}
+get_sim_results(results_SE15_2, fscores2, params)
+```
+
+Plot distribution of tests lengths:
+
+```{r fig.width=12, fig.height=8}
+#Prepare cuts
+tests_lengths <- laply(results_SE15_2, function(x) length(x$items_answered))
+cuts <- cut(tests_lengths, breaks = c(0, 5, 10, 15, 25, 35, 50, 75, 100, 379, 380), labels = c("1 - 5", "6 - 10", "11 - 15", "16 - 25", "26 - 35", "36 - 50", "51 - 75", "76 - 100", "101 - 379", "380"))
+
+#Plot
+ggplot(data.frame(round(table(cuts) / nrow(responses2) * 100, 1)), aes(x = cuts, y = Freq)) +
+  xlab("Number of items administered") +
+  ylab("Percent of respondents (%)") +
+  geom_bar(stat = "identity") +
+  labs(title = "CDI: WG production (16 - 18 months children). SE = 0.15 stop criterion") +
+  geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
+  theme_pubclean() +
+  theme(text = element_text(size=16))
+```
+
+# Model created on 16-18 months children
+
+```{r eval=F}
+mod2 <- mirt(data = responses2, model = 1, SE = TRUE, quadpts = 451, technical = list(NCYCLES = 30000))
+```
+
+## Params IRT all children
+
+```{r}
+params_IRT2 <- as.data.frame(coef(mod2, simplify = T, IRTpars = T)$items)[1:2]
+```
+
+```{r}
+params_cdi2 <- cbind(params_IRT2, cdi)
+ggplot(params_cdi2, aes(b, a, label=position)) +
+  geom_text(check_overlap = T) +
+  geom_point(alpha = 0.3) +
+  xlab("Difficulty") +
+  ylab("Discrimination") +
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "grey"),
+  legend.position = "top"
+)
+```
+
+## Params IRT 16-18 months children
+
+```{r}
+ggplot(params_cdi, aes(b, a, label=position)) +
+  geom_text(check_overlap = T) +
+  geom_point(alpha = 0.3) +
+  xlab("Difficulty") +
+  ylab("Discrimination") +
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "grey"),
+  legend.position = "top"
+)
+```
+```
+

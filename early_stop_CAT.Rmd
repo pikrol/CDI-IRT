@@ -42,14 +42,16 @@ load("Data/early_stop_CAT.RData")
 
 # Ability vs. SE whole pool
 
-```{r}
+```{r fig.width = 12, fig.height = 8}
 ggplot(fscores, aes(F1, SE_F1)) +
   geom_point(alpha = 0.3) +
   xlab("Ability level (Θ)") +
   ylab("Standard error (SE)") +
+  labs(title = "CDI: WS production") +
   theme(
   panel.background = element_rect(fill = NA),
-  panel.grid.major = element_line(colour = "lightgrey")
+  panel.grid.major = element_line(colour = "lightgrey"),
+  text = element_text(size=16)
 )
 ```
 
@@ -79,6 +81,7 @@ ggplot(data.frame(round(table(cuts) / nrow(responses) * 100, 1)), aes(x = cuts, 
   xlab("Number of items administered") +
   ylab("Percent of respondents (%)") +
   geom_bar(stat = "identity") +
+  labs(title = "CDI: WS production. SE = 0.1 stop criterion") +
   geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
   theme_pubclean() +
   theme(text = element_text(size=16))
@@ -104,6 +107,7 @@ cuts <- cut(tests_lengths, breaks = c(0, 5, 10, 15, 25, 35, 50, 75, 100, 666, 66
 ggplot(data.frame(round(table(cuts) / nrow(responses) * 100, 1)), aes(x = cuts, y = Freq)) +
   xlab("Number of items administered") +
   ylab("Percent of respondents (%)") +
+  labs(title = "CDI: WS production. SE = 0.15 stop criterion") +
   geom_bar(stat = "identity") +
   geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
   theme_pubclean() +
@@ -122,4 +126,19 @@ ggplot(data.frame(round(table(cuts) / nrow(responses) * 100, 1)), aes(x = cuts, 
   geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
   theme_pubclean() +
   theme(text = element_text(size=16))
+```
+
+# SE vs. age
+
+```{r fig.width=12, fig.height=8}
+ggplot(data.frame(age = as.factor(responses_demo$months), SE = fscores$SE_F1), aes(age, SE)) +
+  geom_boxplot() +
+  xlab("Age (months)") +
+  ylab("Standard error of ability estimations") +
+  labs(title = "CDI: WS production") +
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "lightgrey"),
+  text = element_text(size=16)
+  )
 ```
