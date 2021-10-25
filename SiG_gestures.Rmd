@@ -167,6 +167,11 @@ itemfit <- itemfit(mod, method = "MAP")
 itemfit[itemfit$p.S_X2 < 0.001, ]
 ```
 
+```{r}
+itemfit <- itemfit(mod61q, method = "MAP")
+itemfit[itemfit$p.S_X2 < 0.05, ]
+```
+
 Two misfits. Let's remove them and create model once more:
 
 ```{r}

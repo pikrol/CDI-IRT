@@ -317,6 +317,18 @@ itemfit[itemfit$p.S_X2 &lt; 0.001, ]</code></pre>
 <pre><code>##          item   S_X2 df.S_X2 RMSEA.S_X2 p.S_X2
 ## 49  Gesty_E_1 82.182      43      0.026      0
 ## 60 Gesty_E_12 95.892      46      0.028      0</code></pre>
+<pre class="r"><code>itemfit &lt;- itemfit(mod61q, method = &quot;MAP&quot;)
+itemfit[itemfit$p.S_X2 &lt; 0.05, ]</code></pre>
+<pre><code>##          item   S_X2 df.S_X2 RMSEA.S_X2 p.S_X2
+## 8   Gesty_A_8 69.851      48      0.018  0.021
+## 23  Gesty_C_5 65.633      40      0.022  0.006
+## 42  Gesty_D_7 60.944      43      0.018  0.037
+## 48 Gesty_D_13 70.390      51      0.017  0.037
+## 49  Gesty_E_1 82.182      43      0.026  0.000
+## 50  Gesty_E_2 75.617      47      0.021  0.005
+## 59 Gesty_E_11 74.768      46      0.021  0.005
+## 60 Gesty_E_12 95.892      46      0.028  0.000
+## 62 Gesty_E_14 68.576      47      0.018  0.022</code></pre>
 <p>Two misfits. Let’s remove them and create model once more:</p>
 <pre class="r"><code>responses_r &lt;- responses[, !colnames(responses) %in% itemfit[itemfit$p.S_X2 &lt; 0.001, &quot;item&quot;]]
 ncol(responses_r)</code></pre>
