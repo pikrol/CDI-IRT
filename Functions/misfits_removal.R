@@ -28,18 +28,19 @@ misfits_removal <- function(responses, quadtps, NCYCLES, p, output_file, maxN = 
       
       mod <- mirt(data = responses, model = 1, SE = TRUE, quadpts = quadtps, technical = list(NCYCLES = NCYCLES))
       itemfit <- itemfit(mod, method = "MAP")
+      items_to_remove <- itemfit[itemfit$p.S_X2 < p | is.na(itemfit$p.S_X2), "item"]
       
-      if (nrow(itemfit[itemfit$p.S_X2 < p, ]) == 0){
+      if (length(items_to_remove) == 0){
         
         cat(paste0("\n=====\n\nModel with no misfits obtained. Created with ", items_nr, " items"))
         break
         
       } else {
         
-        items_removed[[n]] <- colnames(responses)[which(colnames(responses) %in% itemfit[itemfit$p.S_X2 < p, "item"])]
+        items_removed[[n]] <- colnames(responses)[which(colnames(responses) %in% items_to_remove)]
         items_removed_nr <- length(items_removed[[n]])
         items_nr <- items_nr - items_removed_nr
-        responses <- responses[, !colnames(responses) %in% itemfit[itemfit$p.S_X2 < p, "item"]]
+        responses <- responses[, !colnames(responses) %in% items_to_remove]
         cat(paste0("\n", items_removed_nr, " item(s) needed to be removed for p = ", p, "\n", items_nr, " items left\n"))
         
       } 
