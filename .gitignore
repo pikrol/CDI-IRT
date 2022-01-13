@@ -5,4 +5,9 @@ Data/*
 *.Rproj
 .RData
 TODO.txt
+Tests.Rmd
+Tests/
+CDI-online/
+
+
 
