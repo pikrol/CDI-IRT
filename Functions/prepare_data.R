@@ -34,7 +34,7 @@ prepare_data <- function(data, version, production = T){
   
   if (version == "G") {
     cdi <<- cdi[order(cdi$number.wg), ]
-    cdi <<- cdi[!cdi$position %in% c("brzydko", "ciepÅ‚o", "dobrze", "gorÄ…co", "Å‚adnie", "mokro", "zimno"), ] #Remove some doubled words
+    cdi <<- cdi[!cdi$position %in% c("brzydko", "ciep³o", "dobrze", "gor¹co", "³adnie", "mokro", "zimno"), ] #Remove some doubled words
     cdi <<- na.omit(cdi) 
   }
 
