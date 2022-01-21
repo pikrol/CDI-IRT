@@ -1,4 +1,4 @@
-misfits_removal <- function(responses, quadtps, NCYCLES, p, output_file, maxN = ncol(responses)){
+misfits_removal <- function(responses, quadtps, NCYCLES, p, output_file = NULL, maxN = ncol(responses)){
   
   ###
   # Creates subsequent models and removes items from the pool until there are no misfits.
@@ -50,8 +50,10 @@ misfits_removal <- function(responses, quadtps, NCYCLES, p, output_file, maxN = 
   }
   
   output <- list(mod, items_removed)
-  save(output, file = output_file)
-  cat(paste0("\nOutput is saved as ", output_file, " in ", getwd()))
-  #return(output) 
-  
+  if (!is.null(output_file)){
+    save(output, file = output_file)
+    cat(paste0("\nOutput is saved as ", output_file, " in ", getwd()))
+  } 
+  return(output) 
+
 }
