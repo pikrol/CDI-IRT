@@ -1,7 +1,7 @@
 ---
 title: "IRMiK: Słowa i Gesty - gestures"
 author: "Piotr Król"
-date: "21 01 2022"
+date: "24 01 2022"
 output: html_document
 ---
 
@@ -141,7 +141,7 @@ mod101q <- mirt(data = responses, model = 1, SE = TRUE, quadpts = 101)
 ```{r}
 mod101q
 ```
-The same log-likelihood - 61 quadrature points is optimal value
+The same log-likelihood. It means that 61 quadrature points is optimal value
 
 ## Items fit
 
@@ -158,12 +158,12 @@ Check what items were removed:
 ```{r}
 items_removed
 ```
-**All the removed items come from the 'E' category**
+**Interesting: all the removed items come from the 'E' category**
 
-Remove these items from responses:
+Remove these items from responses matrix:
 
 ```{r}
-responses0 <- responses
+responses0 <- responses #Store old matrix just in case
 responses <- responses[, -which((colnames(responses) %in% unlist(items_removed)))]
 print(paste0(ncol(responses), " items left after removal."))
 ```
@@ -208,6 +208,8 @@ ggplot(params_IRT, aes(b, a, colour=category)) +
 
 ## Ability vs. SE
 
+### All children
+
 ```{r eval=F}
 fscores <- as.data.frame(fscores(mod, method = "MAP", full.scores.SE = T))
 ```
@@ -228,6 +230,25 @@ ggplot(fscores, aes(F1, SE_F1)) +
 ```{r}
 summary(fscores$SE_F1)
 ```
+### 16-18 months children
+
+```{r fig.width=12, fig.height=8}
+fscores_r <- fscores[which(responses_demo$months >= 16),]
+ggplot(fscores_r, aes(F1, SE_F1)) +
+  geom_point(alpha = 0.3) +
+  xlab("Ability level (Θ)") +
+  ylab("Standard error (SE)") +
+  labs(title = "Gestures (16 - 18 months children)") +
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "lightgrey"),
+  text = element_text(size=16)
+)
+```
+
+```{r}
+summary(fscores_r$SE_F1)
+```
 
 ## SE vs. age
 
@@ -244,7 +265,7 @@ ggplot(data.frame(age = as.factor(responses_demo_comp[responses_demo_comp$partic
   )
 ```
 
-# Simulations
+# Simulations (only 16 - 18 months children)
 
 ```{r eval=F}
 params <- as.data.frame(coef(mod, simplify = T)$items)[1:2]
@@ -252,16 +273,51 @@ mo <- generate.mirt_object(params, '2PL')
 cl <- makeCluster(detectCores())
 ```
 
-## SE = 0.2 stop criterion
+Get only 16-18 months children:
 
-### All children
+```{r}
+responses_r <- responses[which(responses_demo$months >= 16), ]
+nrow(responses_r)
+```
+
+## Whole pool for everyone
 
 ```{r eval=F}
-results_SE2 <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.2))
+results_all <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses_r, cl = cl, design = list(min_items = ncol(responses_r)))
 ```
 
 ```{r}
-get_sim_results(results_SE2, fscores, params)
+get_sim_results(results_all, fscores_r, params)
+```
+
+```{r fig.width=12, fig.height=8}
+SE_history <- laply(results_all, function(x) x$thetas_SE_history)
+meanSE_item <- as.data.frame(colMeans(SE_history))
+meanSE_item$item <- row.names(meanSE_item)
+colnames(meanSE_item) <- c("mean_SE", "item")
+meanSE_item$item <- as.numeric(meanSE_item$item)
+
+ggline(meanSE_item, x = "item", y = "mean_SE", numeric.x.axis = TRUE) +
+  xlab ("Test length") +
+  ylab ("Mean SE") +
+  labs(title = "Gestures (16 - 18 months children)") +
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.grid.major = element_line(colour = "lightgrey"),
+    text = element_text(size=16)
+  ) + 
+  scale_y_continuous(breaks = c(0.1, 0.15, 0.2, 0.25, 0.5, 0.75, 1)) + 
+  scale_x_continuous(breaks = seq(0, nrow(params), by=5), limits = c(1, nrow(params)))
+```
+
+## SE = 0.2 stop criterion
+
+```{r eval=F}
+results_SE2 <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses_r, cl = cl, design = list(min_SEM = 0.2))
+```
+
+```{r}
+get_sim_results(results_SE2, fscores_r, params)
 ```
 
 ```{r fig.width=12, fig.height=8}
@@ -270,42 +326,11 @@ tests_lengths <- laply(results_SE2, function(x) length(x$items_answered))
 cuts <- cut(tests_lengths, breaks = c(0, 5, 10, 15, 25, 35, 45, 54, 55), labels = c("1 - 5", "6 - 10", "11 - 15", "16 - 25", "26 - 35", "36 - 45", "46-54", "55 (all)"))
 
 #Plot
-ggplot(data.frame(round(table(cuts) / nrow(responses) * 100, 1)), aes(x = cuts, y = Freq)) +
-  xlab("Number of items administered") +
-  ylab("Percent of respondents (%)") +
-  geom_bar(stat = "identity") +
-  labs(title = "Gestures (all children). SE = 0.2 stop criterion") +
-  geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
-  theme_pubclean() +
-  theme(text = element_text(size=16))
-```
-
-### 12-18 months children
-
-```{r}
-responses_r <- responses[which(responses_demo$months >= 12), ]
-nrow(responses_r)
-```
-
-```{r eval=F}
-results_SE2_r <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses_r, cl = cl, design = list(min_SEM = 0.2))
-```
-
-```{r}
-get_sim_results(results_SE2_r, fscores[which(responses_demo$months >= 12), ], params)
-```
-
-```{r fig.width=12, fig.height=8}
-#Prepare cuts
-tests_lengths <- laply(results_SE2_r, function(x) length(x$items_answered))
-cuts <- cut(tests_lengths, breaks = c(0, 5, 10, 15, 25, 35, 45, 54, 55), labels = c("1 - 5", "6 - 10", "11 - 15", "16 - 25", "26 - 35", "36 - 45", "46-54", "55 (all)"))
-
-#Plot
 ggplot(data.frame(round(table(cuts) / nrow(responses_r) * 100, 1)), aes(x = cuts, y = Freq)) +
   xlab("Number of items administered") +
   ylab("Percent of respondents (%)") +
   geom_bar(stat = "identity") +
-  labs(title = "Gestures (12 - 18 months). SE = 0.2 stop criterion") +
+  labs(title = "Gestures (16 - 18 months children). SE = 0.2 stop criterion") +
   geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
   theme_pubclean() +
   theme(text = element_text(size=16))
@@ -318,6 +343,7 @@ Prepare full scores with demographic variables:
 ```{r}
 fscores_demo <- cbind(responses_demo[, c("days", "months", "gender")], fscores)
 fscores_demo$weeks <- ceiling(fscores_demo$days / 7)
+fscores_demo <- fscores_demo[which(fscores_demo$months >= 16), ]
 nrow(fscores_demo)
 ```
 
@@ -341,41 +367,42 @@ start_thetas <- as.matrix(
       fscores_demo$gender
     )
   )
+length(start_thetas)
 ```
 
 ### No start theta given
 
 ```{r}
-get_sim_results(results_SE2, fscores, params)
+get_sim_results(results_SE2, fscores_r, params)
 ```
 
 ```{r}
-get_first_item_responses(results_SE2, responses)
+get_first_item_responses(results_SE2, responses_r)
 ```
 ### Start theta by age and gender
 
 ```{r eval=F}
-results_SE2_theta <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.2, thetas.start = start_thetas))
+results_SE2_theta <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses_r, cl = cl, design = list(min_SEM = 0.2, thetas.start = start_thetas))
 ```
 
 ```{r}
-get_sim_results(results_SE2_theta, fscores, params)
+get_sim_results(results_SE2_theta, fscores_r, params)
 ```
 
 ```{r}
-get_first_item_responses(results_SE2_theta, responses)
+get_first_item_responses(results_SE2_theta, responses_r)
 ```
 
-### Decrease starting thetas by 2
+### Start thetas decreased by 2
 
 ```{r eval=F}
-results_SE2_theta2 <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses, cl = cl, design = list(min_SEM = 0.2, thetas.start = start_thetas - 2))
+results_SE2_theta2 <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses_r, cl = cl, design = list(min_SEM = 0.2, thetas.start = start_thetas - 2))
 ```
 
 ```{r}
-get_sim_results(results_SE2_theta2, fscores, params)
+get_sim_results(results_SE2_theta2, fscores_r, params)
 ```
 
 ```{r}
-get_first_item_responses(results_SE2_theta2, responses)
+get_first_item_responses(results_SE2_theta2, responses_r)
 ```
