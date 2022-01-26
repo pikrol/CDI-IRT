@@ -2,9 +2,13 @@
 
 ## WG (16 - 18 months children):
 
-**WG Production** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/SiG_prod.html <br/>
-**WG Comprehension** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/SiG_comp.html <br/>
-**WG Gestures** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/SiG_gestures.html <br/>
+**Production** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/SiG_prod.html <br/>
+**Comprehension** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/SiG_comp.html <br/>
+**Gestures** https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/SiG_gestures.html <br/>
+
+## Updated SiZ
+
+https://htmlpreview.github.io/?https://github.com/pikrol/CDI-IRT/blob/master/Htmls/SiZ.html <br/>
 
 ## Master's thesis (SiZ):
 
