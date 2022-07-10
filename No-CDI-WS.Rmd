@@ -1,0 +1,306 @@
+---
+title: "No-CDI:WS analysis based on P. Król's code"
+author: "Grzegorz Krajewski"
+date: "29 01 2022"
+output: html_document
+---
+
+## My humble attempt at replicating with Norwegian data P. Król's excellent work :)
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+As a preparation we first load required libraries and functions:
+
+```{r libraries, warning=FALSE, message=FALSE}
+library(wordbankr)
+library(mirt)
+library(mirtCAT)
+library(parallel)
+library(plyr)
+library(ggpubr)
+source(paste0(getwd(),"/Functions/get_sim_results.R"))
+source(paste0(getwd(),"/Functions/get_first_item_responses.R"))
+source(paste0(getwd(),"/Functions/misfits_removal.R"))
+source(paste0(getwd(),"/Functions/prepare_input_files.R"))
+source(paste0(getwd(),"/Functions/get_start_thetas.R"))
+```
+
+# Data preparation
+
+Then we get the right items and data from WordBank,
+pick right variables, transform to right format etc.
+...
+
+```{r}
+get_item_data("Norwegian", "WS") -> cdi
+cdi[cdi$type == "word", c("item_id", "definition", "category")] -> cdi
+
+as.data.frame(get_instrument_data("Norwegian", "WS", items = cdi$item_id, administrations = TRUE)) ->
+  responses_demo
+# Here we will have to filter somehow based on `norming` and `longitudinal` values:
+responses_demo <- responses_demo[responses_demo$norming == TRUE,
+# Here we can pick relevant demo variables
+                                 c("data_id", "value", "num_item_id", "age", "sex")]
+ifelse(is.na(responses_demo$value), 0, 1) -> responses_demo$value
+
+# Around here we might want to change column names to make them consistent with Piotr's code.
+
+responses_demo <- reshape(responses_demo,
+                          timevar = "num_item_id",
+                          idvar = c("data_id", "age", "sex"),
+                          direction = "wide",
+                          v.names = "value")
+```
+
+... and prepare the responses matrix
+
+```{r}
+responses <- as.matrix(responses_demo[,4:ncol(responses_demo)])
+print(paste0("There are ", nrow(responses), " respondents that answered to ", ncol(responses), " items and there are ", length(which(is.na(responses))), " missing responses."))
+```
+
+# Model creation
+
+For the model creation
+we first decide on the optimal number of quadrature points.
+We do it iteratively by fitting models with increasing numbers and
+comparing their fit. We start with the default.
+
+```{r}
+quadpts <- c(61, 151, 301, 451, 601, 751)
+quadpts_comp <- sapply(quadpts, function(x) {
+     cat(paste0("\n -- ", "quadpts: ", x, " -- \n"))
+     mirt(responses, 1, SE=TRUE, quadpts = x, technical = list(NCYCLES = 10000)) -> m
+     list(quadpts = x, conv = m@OptimInfo$converged, logLik = m@Fit$logLik,
+          item1pars = coef(m, simplify = T)$items[1, 1:2])
+})
+quadpts_comp
+```
+
+We then iteratively fit the model and remove any misfits until we have fits for all items.
+
+```{r}
+output <- misfits_removal(responses=responses, quadtps=451, NCYCLES=100000, p=0.001)
+mod <- output[[1]]
+items_removed <- output[[2]]
+```
+
+```{r}
+mod
+```
+
+## Items fit
+
+```{r}
+items_removed
+```
+
+```{r}
+items_to_remove_ids <- as.numeric(laply(unlist(items_removed), function(x) substr(x, 5, nchar(x))))
+cdi[which(cdi$number.ws %in% items_to_remove_ids), ]
+```
+
+Create new responses matrix and new cdi df without this item:
+
+```{r}
+responses_r <- responses[, -which((colnames(responses) %in% unlist(items_removed)))]
+cdi_r <- cdi[-which(cdi$number.ws %in% items_to_remove_ids), ]
+if (nrow(cdi_r) == ncol(responses_r)) print(paste0(ncol(responses_r), " items left after removal."))
+```
+
+## Local dependence
+
+```{r eval=F}
+residuals <- residuals(mod)
+```
+
+```{r}
+residuals_up <- residuals
+residuals_up[lower.tri(residuals_up)] <- NA
+hist(residuals_up, main="Histogram of signed Cramer's V coefficients", xlab= "Cramer's V")
+```
+
+```{r}
+summary(as.vector(residuals_up))
+```
+
+The most highly dependent positions:
+
+```{r}
+indexes <- arrayInd(which(residuals_up > 0.3), dim(residuals))
+data.frame(pos1 = cdi_r[indexes[, 1], "position"], pos2 = cdi_r[indexes[, 2], "position"], CramersV = residuals_up[indexes])
+```
+
+But no pair reach the threshold of 0.5 so I don't remove anything.
+
+# Model exploration
+
+## IRT items parameteres
+
+```{r eval=F}
+params_IRT <- as.data.frame(coef(mod, simplify = T, IRTpars = T)$items)[1:2]
+params_cdi <- cbind(params_IRT, cdi_r)
+```
+
+```{r fig.width=12, fig.height=8}
+ggplot(params_cdi, aes(b, a, colour=category, label=position)) +
+  geom_text(check_overlap = T) +
+  geom_point(alpha = 0.3) +
+  xlab("Difficulty") +
+  ylab("Discrimination") +
+  labs(colour = "Category") +
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "grey"),
+  legend.position = "top"
+)
+```
+
+## Ability vs. SE
+
+```{r eval=F}
+fscores <- as.data.frame(fscores(mod, method = "MAP", full.scores.SE = T))
+```
+
+```{r fig.width=12, fig.height=8}
+ggplot(fscores, aes(F1, SE_F1)) +
+  geom_point(alpha = 0.3) +
+  xlab("Ability level (Θ)") +
+  ylab("Standard error (SE)") +
+  labs(title = "CDI: WS (all children)") +
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "lightgrey"),
+  text = element_text(size=16)
+)
+```
+
+```{r}
+summary(fscores$SE_F1)
+```
+
+## SE vs. age
+
+```{r fig.width=12, fig.height=8 }
+ggplot(data.frame(age = as.factor(responses_demo[responses_demo$participant %in% responses_demo$participant, ]$months), SE = fscores$SE_F1), aes(age, SE)) +
+  geom_boxplot() +
+  xlab("Age (months)") +
+  ylab("Standard error of ability estimations") +
+  labs(title = "CDI: WS") +
+  theme(
+  panel.background = element_rect(fill = NA),
+  panel.grid.major = element_line(colour = "lightgrey"),
+  text = element_text(size=16)
+  )
+```
+
+# Simulations
+
+```{r eval=F}
+params <- as.data.frame(coef(mod, simplify = T)$items)[1:2]
+mo <- generate.mirt_object(params, '2PL')
+cl <- makeCluster(detectCores())
+```
+
+## Whole pool for everyone
+
+```{r eval=F}
+results_all <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses_r, cl = cl, design = list(min_items = ncol(responses_r)))
+```
+
+```{r}
+get_sim_results(results_all, fscores, params)
+```
+
+```{r fig.width=12, fig.height=8}
+SE_history <- laply(results_all, function(x) x$thetas_SE_history)
+meanSE_item <- as.data.frame(colMeans(SE_history))
+meanSE_item$item <- row.names(meanSE_item)
+colnames(meanSE_item) <- c("mean_SE", "item")
+meanSE_item$item <- as.numeric(meanSE_item$item)
+
+ggline(meanSE_item, x = "item", y = "mean_SE", numeric.x.axis = TRUE) +
+  xlab ("Test length") +
+  ylab ("Mean SE") +
+  labs(title = "CDI: WS") +
+  theme(
+    panel.background = element_rect(fill = NA),
+    panel.grid.major = element_line(colour = "lightgrey"),
+    text = element_text(size=16)
+  ) + 
+  scale_y_continuous(breaks = c(0.1, 0.15, 0.2, 0.25, 0.5, 0.75, 1)) + 
+  scale_x_continuous(breaks = seq(0, nrow(params), by=10), limits = c(1, 100))
+```
+
+## SE = 0.1 stop criterion
+
+```{r eval=F}
+results_SE1 <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses_r, cl = cl, design = list(min_SEM = 0.1))
+```
+
+```{r}
+get_sim_results(results_SE1, fscores, params)
+```
+
+```{r fig.width=12, fig.height=8}
+#Prepare cuts
+tests_lengths <- laply(results_SE1, function(x) length(x$items_answered))
+cuts <- cut(tests_lengths, breaks = c(0, 10, 15, 25, 35, 50, 75, 100, 665, 666), labels = c("1 - 10", "11 - 15", "16 - 25", "26 - 35", "36 - 50", "51 - 75", "76 - 100", "101 - 665", "666 (all)"))
+
+#Plot
+ggplot(data.frame(round(table(cuts) / nrow(responses_r) * 100, 1)), aes(x = cuts, y = Freq)) +
+  xlab("Number of items administered") +
+  ylab("Percent of respondents (%)") +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
+  labs(title = "CDI: WS. SE = 0.1 stop criterion") +
+  theme_pubclean() +
+  theme(text = element_text(size=16))
+```
+
+## SE = 0.15 stop criterion
+
+```{r eval=F}
+results_SE15 <- mirtCAT(mo = mo, method = "MAP", criteria = "MI", start_item = "MI", local_pattern = responses_r, cl = cl, design = list(min_SEM = 0.15))
+```
+
+```{r}
+get_sim_results(results_SE15, fscores, params)
+```
+
+```{r fig.width=12, fig.height=8}
+#Prepare cuts
+tests_lengths <- laply(results_SE15, function(x) length(x$items_answered))
+cuts <- cut(tests_lengths, breaks = c(0, 10, 15, 25, 35, 50, 75, 100, 665, 666), labels = c("1 - 10", "11 - 15", "16 - 25", "26 - 35", "36 - 50", "51 - 75", "76 - 100", "101 - 665", "666 (all)"))
+
+#Plot
+ggplot(data.frame(round(table(cuts) / nrow(responses_r) * 100, 1)), aes(x = cuts, y = Freq)) +
+  xlab("Number of items administered") +
+  ylab("Percent of respondents (%)") +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = Freq), vjust = -0.3, size=6) + 
+  labs(title = "CDI: WS. SE = 0.15 stop criterion") +
+  theme_pubclean() +
+  theme(text = element_text(size=16))
+```
+
+## Different start thetas
+
+```{r eval=F}
+output2 <- get_start_thetas(responses_demo[which(responses_demo$months >= 16), ], fscores)
+fscores_aggr <- output2[[1]]
+start_thetas <- output2[[2]]
+```
+
+TODO: Simulations with different start thetas when stop criterion would be specified
+
+# Input files preparation
+
+```{r eval=F}
+prepare_input_files(params, cdi_r, fscores_aggr, question = "Czy Twoje dziecko rozumie", group = "mowa", file1 = "items-WG-comp.csv", file2 = "startThetas-WG-comp.csv")
+```
+
+
+
